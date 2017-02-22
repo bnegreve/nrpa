@@ -7,17 +7,19 @@
 #include <unistd.h>
 #include <iostream>
 #include <fstream>
-
+#include <limits>
 #include "rollout.hpp"
 
 using namespace std; 
 
-Rollout::Rollout():_level(0), _score(0){}
+
+
+Rollout::Rollout(int level):_level(level), _score(numeric_limits<double>::lowest()){}
 
 /* Create a rollout object from rollout data */ 
 Rollout::Rollout(int *rolloutData, int length, int level, double score)
   :std::vector<int>(length), _level(level), _score(score){
-  copy(rolloutData, rolloutData + length, this->begin()); 
+addAllMoves(rolloutData, length); 
 }
 
 /* store rollout into filename */
