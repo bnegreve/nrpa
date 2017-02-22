@@ -1,7 +1,5 @@
 #include <float.h>
-#include <sys/file.h>// lock
-#include <cassert>
-#include <unistd.h>
+#include "rollout.hpp" 
 
 double ALPHA = 1.0;
 int N = 10;
@@ -332,99 +330,6 @@ void adaptLevel (int length, int level, double pol [MaxMoveNumber]) {
 /**/
 
 Policy polAdapt;
-
-
-class Rollout : std::vector<int> {
-
-    friend ostream &operator<<(ostream &, const Rollout &);
-    friend istream &operator>>(istream &is, Rollout &r); 
-
-public: 
-
-    Rollout():_level(0), _score(0){}
-
-    /* Create a rollout object from rollout data */ 
-    Rollout(int *rolloutData, int length, int level, double score)
-	:std::vector<int>(length), _level(level), _score(score){
-	copy(rolloutData, rolloutData + length, this->begin()); 
-    }
-
-    /* store rollout into filename */
-    void store(const string &filename, const string &lockfile){
-	int fd = open(lockfile.c_str(), O_CREAT); 
-	flock(fd, LOCK_SH); 
-	std::fstream fs;
-	fs.open (filename, std::fstream::out);
-	fs<<*this<<"\n"; 
-	fs.close();
-	flock(fd, LOCK_UN); 
-	close(fd); 
-    }    
-
-    /* load rollout from file*/
-    void load(const string &filename, const string &lockfile){
-	int fd = open(lockfile.c_str(), O_CREAT); 
-	flock(fd, LOCK_SH); 
-	std::fstream fs;
-	fs.open (filename, std::fstream::in);
-	fs>>*this; 
-	fs.close();
-	flock(fd, LOCK_UN); 
-	close(fd); 
-    }
-
-    void compareAndSwap(const string &filename, const string &lockfile){
-	Rollout best;
-	best.load(filename, lockfile);
-	if(_score > best._score || best.size() == 0){
-//	    cout<<best.size() << " " <<best._level <<" " <<_level<<endl; 
-	    assert(best.size() == 0 || best._level == _level);
-	    this->store(filename, lockfile); 
-	}
-	else
-	    *this = best;
-    }
-
-    const int *data() const { return &front(); }
-    int length() const { return size(); }
-    int score() const { return _score; }
-    int level() const { return _level; }
-
-
-private:
-    int _level; 
-    double _score; 
-}; 
-
-ostream &operator<<(ostream &os, const Rollout &r){
-    os<<r.length()<<" "; 
-    os<<r._level<<" "; 
-    os<<r._score<<" "; 
-    for(auto it = r.begin(); it != r.end() - 1; it++)
-	os<<*it<<" "; 
-    if(r.length() > 0) os<<r.back();
-    return os; 
-}
-
-istream &operator>>(istream &is, Rollout &r){
-    int length;
-    is>>std::skipws; 
-    is>>length;
-    is>>r._level; 
-    is>>r._score; 
-    r.clear();
-    r.resize(length); 
-    for(int i = 0; i < length; i++){
-	is>>r[i];
-    }
-    if(is.eof()){
-	cerr<<"Warning, cannot read Rollout from file"<<endl;
-	r = Rollout(); 
-    }
-}
-
-
-
 
 
 void adaptLevel (int length, int level, Policy & pol) {
