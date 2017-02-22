@@ -1,4 +1,4 @@
-// Rollout.hpp
+// rollout.hpp
 // Made by Benjamin Negrevergne 
 // Started on <2017-02-22 Wed>
 
