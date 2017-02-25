@@ -457,6 +457,11 @@ class Board {
     return nbMoves;
   }
 
+  int maxLegalMoves(){
+    return maxLegalMoves; 
+  }
+
+  
   void play (Move & move) {
     if (simpleMoves) {
       Move m;
@@ -738,7 +743,7 @@ void printHighScore (int i) {
 
 //#include "nestedSH.c"
 //#include "nested.c"
-#include "nrpa.cpp"
+#include "nrpa_inc.cpp"
 //#include "nrpauct.c"
 //#include "beamnrpa.c"
 //#include "beamuctnrpa.c"

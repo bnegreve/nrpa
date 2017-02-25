@@ -7,6 +7,7 @@
 
 #include <vector>
 #include <iostream>
+#include <cassert>
 
 using std::string;
 using std::vector; 
@@ -36,8 +37,8 @@ public:
   inline int score() const { return _score; }
   inline int level() const { return _level; }
   inline int setScore(int score) { _score = score; }
-  inline addMove(int code){ this->push_back(code); }
-  inline addAllMoves(int *rolloutData, int length){ this->resize(length); copy(rolloutData, rolloutData + length, this->begin()); }
+  inline void addMove(int code){ this->push_back(code); }
+  inline void addAllMoves(int *rolloutData, int length){ this->resize(length); copy(rolloutData, rolloutData + length, this->begin()); }
     
 private:
     int _level; 

@@ -1,6 +1,9 @@
-// movemap.cpp
+// movemap.hpp
 // Made by Benjamin Negrevergne 
 // Started on <2017-02-24 Fri>
+
+#ifndef MOVEMAP_HPP
+#define MOVEMAP_HPP
 
 #include <unordered_map>
 #include <vector>
@@ -8,101 +11,96 @@
 #include <cassert>
 
 
-/* TODO: use template instead of inheritence to avoid virual function calls and other costly dynamic things */ 
-
-class AbstractMove{
-public: 
-  virtual int hash() const = 0; 
-  virtual bool operator==(const AbstractMove &other) const = 0; 
-  virtual void print(std::ostream &os) const = 0; 
-  virtual AbstractMove *clone() const = 0; 
-}; 
-
-std::ostream &operator<<(std::ostream &os, const AbstractMove &m); 
-
-class IntMove : public AbstractMove{
-public: 
-  IntMove (int move); 
-  IntMove (const IntMove &cpy); 
-    
-  virtual int hash() const; 
-  virtual bool operator==(const AbstractMove &other) const; 
-  virtual void print(std::ostream &os) const; 
-  virtual AbstractMove *clone() const; 
-
-private:
-  int _moveId; 
-};
-
-// struct MyMove : AbstractMove{
-//   int a;
-//   int b ; 
-
-//   MyMove(int a, int b):a(a),b(b){ }
-//   MyMove(const MyMove &cpy): a(cpy.a), b(cpy.b){ }
-  
-//   int hash() const { return a*1000+b; }
-//   bool operator==(const AbstractMove &other) const{
-//     const MyMove *m = dynamic_cast<const MyMove *>(&other);
-//     if(m == NULL) return false;
-//     else return a == m->a && b == m->b; 
-//   }
-//   void print(std::ostream &os) const {  os<<"A = "<<a<<" B = "<< b; }
-
-//   virtual AbstractMove *clone() const{
-//     return new MyMove(*this); 
-//   }
-// }; 
-
-// std::ostream &operator<<(std::ostream &os, const MyMove &m){
-//   os<<"A = "<<m.a<<" B = "<< m.b; 
-//   return os; 
-// }
-
+/* Maps move to code and conversly */
+/* See movemap.cpp for usage examples */
+template <typename M, typename H = std::hash<M>, typename EQ = std::equal_to<M>>
 class MoveMap{
-  friend std::ostream &operator<<(std::ostream &, const MoveMap &);
+
+
+  template <typename M_, typename H_, typename EQ_>
+  friend std::ostream &operator<< (std::ostream &, const MoveMap<M_,H_,EQ_> &);
+
 public:
 
 
-  inline const AbstractMove &move(int code) const {
-    assert(code < _moves.size()); 
-    return *_moves[code]; 
-  }
+  ~MoveMap();
+  
+  /* get move from code */ 
+  const M &move(int code) const; 
 
-  /* return move code from move, fail in DEBUG mode if code does not exist */ 
-  inline int code(const AbstractMove &m) const{
-    auto hit = _codes.find(&m);
-    assert(hit != _codes.end()); 
-    return hit->second; 
-  }
+  /* get code from move, fail in DEBUG mode if code does not exist */ 
+  int code(const M &m) const;
 
-  int registerMove(const AbstractMove &m); 
+  /* Add a new move */ 
+  int registerMove(const M &m); 
+  
 
 private:
 
   struct PtrHasher {
-    inline size_t operator()(const AbstractMove *move) const{
-      return move->hash(); 
+    inline size_t operator()(const M *move) const{
+      static H hasher; 
+      return hasher(*move); 
     }
   };
 
   struct PtrEqOp{
-    inline size_t operator()(const AbstractMove *m1, const AbstractMove *m2) const{
-      std::cout<<"move cmp "<<std::endl; 
-      return (*m1) == (*m2); 
+    inline bool operator()(const M *m1, const M *m2) const{
+      static EQ eq; 
+      return eq(*m1, *m2); 
     }
   };
 
-  std::unordered_map<const AbstractMove *,
-		     int,
-		     PtrHasher,
-		     PtrEqOp> _codes; 
-
-  std::vector<AbstractMove *> _moves; 
-
+  std::vector<const M *> _moves;  // maps codes to moves
+  std::unordered_map<const M *, int, PtrHasher, PtrEqOp> _codes; // maps moves to codes
 };
 
 
-std::ostream &operator<<(std::ostream &os, const MoveMap &m); 
+/* Template definitions */
+
+template <typename M, typename H, typename EQ>
+MoveMap<M,H,EQ>::~MoveMap(){
+  for(auto m = _moves.begin(); m != _moves.end(); ++m){
+    delete *m; 
+  }
+}
+
+template <typename M, typename H, typename EQ>
+const M &MoveMap<M,H,EQ>::move(int code) const {
+    assert(code < _moves.size()); 
+    return *_moves[ code ]; 
+  }
+
+template <typename M, typename H, typename EQ>
+int MoveMap<M,H,EQ>::code(const M &m) const{
+  auto hit = _codes.find(&m);
+  assert(hit != _codes.end()); 
+  return hit->second; 
+}
 
 
+template <typename M, typename H, typename EQ>
+int MoveMap<M,H,EQ>::registerMove(const M &m){
+  auto hit = _codes.find(&m);
+
+  if(hit == _codes.end()){
+    /* this is a new move */ 
+    int newCode = _moves.size(); 
+    _moves.push_back(new M(m)); 
+    _codes[ _moves.back() ] = newCode; 
+    return newCode; 
+  }
+  else{
+    return hit->second; 
+  }
+}
+
+template <typename M, typename H, typename EQ>
+std::ostream &operator<<(std::ostream &os, const MoveMap<M, H, EQ> &m){
+  for(int i = 0; i < m._moves.size(); i++){
+    os<<"Code : "<<i<<" "<<" Move: "<<(*m._moves[i])<<std::endl;
+  }
+  return os; 
+}
+
+#endif 

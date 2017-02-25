@@ -29,7 +29,6 @@ const int MaxPlayoutLength = 101;
 
 typedef int Move;
 
-/* Simple board game, two moves (left, right), the final score is the number of left moves */ 
 class Board {
  public:
   Move rollout [MaxPlayoutLength];

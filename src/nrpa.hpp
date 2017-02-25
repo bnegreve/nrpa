@@ -1,165 +1,27 @@
-// nrpa.cpp
+// nrpa.hpp
 // Made by Benjamin Negrevergne 
 // Started on <2017-02-22 Wed>
 
+#ifndef NRPA_HPP
+#define NRPA_HPP
+
 #include <map>
+#include <cmath>
 #include <limits>
-#include <rollout.hpp>
-
-
-class Nrpa{
-
-public:
-
-  static const int N = 10; 
-
-  vector<Policy> policies; // one for each level 
-  vector<Rollout> bestRollouts; // one for each level (necessary?)
-
-  double _bestScoreNRPA = numeric_limits<double>::lowest(); 
-
-  clock_t startClockNRPA, stopClockNRPA;
-  double nextTimeNRPA = 0.01;
-  int indexTimeNRPA;
-  int indexSearch;
-  float valueAfterTimeNRPA [10000] [100];
-  float sumValueAfterTimeNRPA [100];
-  int nbSearchTimeNRPA [100];
-
-
-  double nrpa(int level, Policy & pol) {
-    //    scoreBestRollout [level] = -DBL_MAX;
-    if (level == 0) {
-      return playoutNRPA (pol); // TODO !
-    }
-    else {
-      policies [level] = pol;
-      
-      Policy &policy = policy[level]; 
-      Rollout &bestRollout = bestRollouts[level]; 
-
-      int last = 0;
-      for (int i = 0; i < N; i++) {
-	double score = nrpa (level - 1, policy);
-	if (score >= bestRollout.score()) {
-
-	  last = i;
-
-	  bestRollout = bestRollout[level - 1]; 
-
-	  if (level > 2) {
-	    for (int t = 0; t < level - 1; t++)
-	      fprintf (stderr, "\t");
-	    fprintf(stderr,"Level : %d, N:%d, score : %f\n", level, i, bestRollout.score());
-	  }
-	}
-
-	ALPHA = alpha;
-	ALPHA = getAlpha (last, i);
-
-	adaptLevel (bestRollouts [level], level, policies [level]);
-
-	if (stopOnTime && (indexTimeNRPA > nbTimesNRPA))
-	  return bestRollout.score();
-      }
-      return bestRollout.score();
-    }
-  }
-
-  void updatePolicy(const Rollout &rollout){
-    //TODO 
-
-  }
-
-  double playout (Policy & pol) {
-    int nbMoves = 0;
-    Move moves [MaxLegalMoves];
-    double probaMove [MaxLegalMoves];
-    Board board;
- 
-    cout<<"Playout start from step "<<board.length<<endl;
-
-    while (true) {
-
-      if (board.terminal ()) {
-
-	double score = board.score(); 
-	Rollout r; // create rollout for level 0
-
-	r.setScore(score); 
-	r.addAllMoves(board.rollout, board.length); 
-
-	if( score > _bestScoreNRPA ) {
-	  _bestScoreNRPA = score; 
-	  bestBoard = board;
-	  board.print (stderr);
-	}
-
-	/* Timining .. I guess */ 
-	stopClockNRPA = clock ();
-	double time = ((double)(stopClockNRPA - startClockNRPA)) / CLOCKS_PER_SEC;
-	if (time > nextTimeNRPA) {
-	  while (time > 2 * nextTimeNRPA) {
-	    indexTimeNRPA++;
-	    nextTimeNRPA *= 2;
-	  }
-	  valueAfterTimeNRPA [indexSearch] [indexTimeNRPA] = _bestScoreNRPA;
-	  sumValueAfterTimeNRPA [indexTimeNRPA] += _bestScoreNRPA;
-	  nbSearchTimeNRPA [indexTimeNRPA]++;
-	  indexTimeNRPA++;
-	  nextTimeNRPA *= 2;
-	}
-	/* .. */ 
-	
-	cout<<"Found terminal state at "<<board.length<<" score = "<<score<<endl;
-	return score; 
-      }
-
-      /* board is at a non terminal step */
-      int step = board.length; 
-      
-      /* TODO Fix useless copy */ 
-      nbMoves = board.legalMoves (moves);
-
-      vector<int> moveCodes(nbMoves); 
-      vector<double> moveProbs(nbMoves); 
-      double sum = 0; 
-
-      for (int i = 0; i < nbMoves; i++) {
-	moveCodes[i] = board.code(*move);
-	moveProbs[i] = math::exp(pol.prob(moveCodes[i]));
-	sum += moveProbs[i]; 
-      }
-
-      /* Pick a move randomly */
-      double r = (rand () / (RAND_MAX + 1.0)) * sum;
-      int j = 0;
-      double s = moveProbs[0];
-      while (s < r) { 
-	j++;
-	s += moveProbs[j];
-      }
-
-      bestRollout[0].addMove(moveCodes[j]);
-      assert(bestRollout[0].size() == step); // SURE? 
-      board.play (moves [j]);
-    }
-    return 0.0;  
-  }
-  
-}; 
-
-
+#include "rollout.hpp"
+#include "movemap.hpp"
 
 class Policy{
 
 public:
 
-
   inline double prob(int code) const {
     auto hit = _probs.find(code);
-    assert(hit != _probs.end()); 
-    return hit->second; 
+    //    assert(hit != _probs.end()); 
+    if( hit != _probs.end() )
+      return hit->second;
+    else
+      return 0.;
   }
 
   inline void setProb(int code, double prob){
@@ -173,14 +35,199 @@ public:
   }
 
   inline void print(std::ostream &os) const{
-    os<<"Policy: "<<endl; 
+    os<<"Policy: "<<std::endl; 
     for(auto it = _probs.begin(); it != _probs.end(); ++it){
-      os<<"\tCode : "<<it->first<<" prob: "<<it->second<<endl;
+      os<<"\tCode : "<<it->first<<" prob: "<<it->second<<std::endl;
     }
-    os<<"End of Policy"<<endl; 
+    os<<"End of Policy"<<std::endl; 
   }
 
 private: 
-  std::Map<int, double> _probs; 
+  std::map<int, double> _probs; 
 };
 
+template <typename B, typename M,
+	  typename H = std::hash<M>,
+	  typename EQ = std::equal_to<M>>
+class Nrpa{
+
+public:
+
+  static const int N = 10; 
+
+  vector<Policy> policies; // one for each level 
+  vector<Rollout> bestRollouts; // one for each level (necessary?)
+
+  int _startLevel; 
+  double _bestScoreNRPA = std::numeric_limits<double>::lowest(); 
+
+  clock_t startClockNRPA, stopClockNRPA;
+  double nextTimeNRPA = 0.01;
+  int indexTimeNRPA;
+  int indexSearch;
+  //  float valueAfterTimeNRPA [10000] [100];
+  // float sumValueAfterTimeNRPA [100];
+  // int nbSearchTimeNRPA [100];
+  MoveMap<M, H, EQ> _movemap; 
+  B _bestBoard; 
+
+  Nrpa(int startLevel);
+
+  double nrpa(); 
+
+  double nrpa(int level, Policy & pol, Rollout *bestRollout); 
+  double playout (const Policy & pol, Rollout *bestRollout);
+
+  void updatePolicy(); 
+
+
+  inline void printPolicy(std::ostream &os, int level) const{
+    assert (level <= _startLevel);
+    policies[level].print(os); 
+  }
+  
+}; 
+
+template <typename B,typename  M,typename  H,typename EQ>
+Nrpa<B,M,H,EQ>::Nrpa(int startLevel): policies(startLevel + 1),
+				      bestRollouts(startLevel+1),
+				      _startLevel(startLevel),
+				      _movemap(){
+  
+}
+
+template <typename B,typename  M,typename  H,typename EQ>
+double Nrpa<B,M,H,EQ>::nrpa(){
+  Policy p;
+  Rollout r; 
+  double score = nrpa(_startLevel, p, &r);
+  std::cout<<r<<std::endl;
+  return score; 
+  
+}
+
+template <typename B,typename  M,typename  H,typename EQ>
+double Nrpa<B,M,H,EQ>::nrpa(int level, Policy &pol, Rollout *bestRollout){
+  using namespace std; 
+  //    scoreBestRollout [level] = -DBL_MAX;
+
+  if (level == 0) {
+    return playout (pol, bestRollout); 
+  }
+  else {
+    policies [level] = pol;
+    Policy &policy = policies[level]; 
+
+    int last = 0;
+    for (int i = 0; i < N; i++) {
+      //std::cout<<"New ITER "<<std::endl;
+      Rollout rollout; 
+      nrpa (level - 1, policy, &rollout);
+      if (rollout.score() >= bestRollout->score()) {
+	last = i;
+	(*bestRollout) = rollout; 
+	
+	if (level > 2) {
+	  double score = bestRollout->score();
+	  for (int t = 0; t < level - 1; t++)
+	    fprintf (stderr, "\t");
+	  fprintf(stderr,"Level : %d, N:%d, score : %f\n", level, i, score);
+	}
+      }
+
+      //	adaptLevel (bestRollouts [level], level, policies [level]);
+      updatePolicy(); 
+
+      // TODO : fix 
+      // if (stopOnTime && (indexTimeNRPA > nbTimesNRPA))
+      //   return bestRollout.score();
+    }
+    return bestRollout->score();
+  }
+}
+
+template <typename B,typename  M,typename  H,typename EQ>
+void Nrpa<B,M,H,EQ>::updatePolicy(){
+  //TODO 
+  
+}
+
+template <typename B,typename  M,typename  H,typename EQ>
+double Nrpa<B, M, H, EQ>::playout (const Policy & pol, Rollout *rollout) {
+  using namespace std; 
+  assert(rollout->length() == 0); 
+  
+  B board; 
+ 
+  while (true) {
+
+    if (board.terminal ()) {
+
+      double score = board.score(); 
+
+      rollout->setScore(score); 
+      rollout->addAllMoves(board.rollout, board.length); 
+
+      if( score > _bestScoreNRPA ) {
+	_bestScoreNRPA = score; 
+	_bestBoard = board;
+	board.print (stderr);
+      }
+	
+      return score; 
+    }
+
+    /* board is at a non terminal step */
+    int step = board.length; 
+      
+
+    /* Get all legal moves for this stage, and register them a code if needed */ 
+
+    /* Compatibility code, a bit redudant but required to work with standard Board class */ 
+    std::vector<M> legalMoves(board.maxLegalMoves());   // could be static if no parallel code is used 
+    int nbMoves = board.legalMoves(&legalMoves.front());
+    legalMoves.resize(nbMoves); 
+
+    /* Fetch move codes from the movemap */ 
+    std::vector<int> moveCodes(nbMoves);
+    for(int i = 0; i < nbMoves; i++){
+      int code = _movemap.registerMove(legalMoves[i]);
+      moveCodes[i] = code; 
+    }
+
+    /* Compute probs for each move (code) */ 
+    vector<double> moveProbs(nbMoves); 
+    double sum = 0; 
+
+    for (int i = 0; i < nbMoves; i++) {
+      double prob = exp(pol.prob(moveCodes[i])); 
+      moveProbs[i] = prob;
+      sum += prob; 
+    }
+
+    /* Pick a move randomly */
+    double r = (rand () / (RAND_MAX + 1.0)) * sum;
+    int j = 0;
+    double s = moveProbs[0];
+    while (s < r) { 
+      j++;
+      s += moveProbs[j];
+    }
+
+    int selectedMove = moveCodes[j]; 
+
+    
+    // bestRollouts[0].addMove(selectedMove); 
+    // cout<<bestRollouts[0].length()<< " step "<<step<<endl;
+    // assert(bestRollouts[0].length() == step+1); // SURE? 
+
+    rollout->addMove(selectedMove); 
+    board.play(_movemap.move(selectedMove));
+  }
+  return 0.0;  
+}
+
+
+
+
+#endif 

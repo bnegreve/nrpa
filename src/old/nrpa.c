@@ -1,8 +1,7 @@
 #include <float.h>
-#include "rollout.hpp" 
-
+#include <iostream>
 double ALPHA = 1.0;
-int N = 10;
+int N = 100;
 //int N [10] = {20, 20, 20, 20, 20, 20, 20, 20, 50, 50};
 
 double k = 0.0;
@@ -12,9 +11,9 @@ const int MaxLevel = 6;
 double scoreBestRollout [10];
 int lengthBestRollout [10];
 Move bestRollout [10] [MaxPlayoutLength];
-int bestCodeBestRollout [10] [MaxPlayoutLength]; // store the best rollout using actual code moves (not local code id). 
+int bestCodeBestRollout [10] [MaxPlayoutLength];
 int nbMovesBestRollout [10] [MaxPlayoutLength];
-int codeBestRollout [10] [MaxPlayoutLength] [MaxLegalMoves]; // store mapping between local move id and actual code. The mapping is different for each step 
+int codeBestRollout [10] [MaxPlayoutLength] [MaxLegalMoves];
 
 Board bestBoard;
 
@@ -40,8 +39,6 @@ float kAMAF = 1.0;
 double minNorm = -0.1, maxNorm = 2.0;
 
 #include <vector>
-#include <iostream>
-#include <fstream>
 
 using namespace std;
 
@@ -101,35 +98,22 @@ class PolicyAMAF {
 PolicyAMAF policyAMAF;
 
 class ProbabilityCode {
-    friend ostream &operator<<(ostream &, ProbabilityCode); 
  public:
   int code;
   double proba;
 };
 
-ostream &operator<<(ostream &os, ProbabilityCode p){
-    os<<"Code: "<<p.code<<" Proba : "<<p.proba; 
-    return os; 
-}
-
-/* This is more or less a priority queue implemented with a hashtable internally */ 
 class Policy {
-
-public:
-
-    void print() const{
-	cout<<"Policy "<<this<<endl; 
-	for(int i = 0; i < SizeTablePolicy; i++){
-	    for(int j = 0; j < table[i].size(); j++){
-		cout<<table[i][j]<<endl;
-	    }
-	}
-	cout<<"End of policy"<<endl;
-    }
-  
-
  public:
-  vector<ProbabilityCode> table [SizeTablePolicy + 1]; // hashtable! 
+  vector<ProbabilityCode> table [SizeTablePolicy + 1];
+
+  void print(){
+    std::cout<<"Policy "<<std::endl;
+    for(int i = 0; i < SizeTablePolicy; i++)
+      for(int j = 0; j < table[i].size(); j++)
+	std::cout<<table[i][j].code<<" : "<<table[i][j].proba<<std::endl;
+  }
+
 
   void set (int code, double proba) {
     int index = code & SizeTablePolicy;
@@ -270,7 +254,7 @@ double playoutNRPA (Policy & pol) {
       /**/
       probaMove [i] = exp (pol.get (c));
 
-
+      pol.print();
       codeBestRollout [0] [board.length] [i] = c;
     }
 	
@@ -333,48 +317,19 @@ void adaptLevel (int length, int level, double pol [MaxMoveNumber]) {
 
 Policy polAdapt;
 
-
 void adaptLevel (int length, int level, Policy & pol) {
-    if(level == 4) {
-        Rollout r(bestCodeBestRollout[level], lengthBestRollout [level], level, scoreBestRollout[level]);
-	r.compareAndSwap("blah", "lock"); 
-	// copy(r.data(), r.data() + r.length(), bestCodeBestRollout[level]);
-	// lengthBestRollout[level] = r.length();
-	// scoreBestRollout[level] = r.score(); 
-	/* Code table */
-	for (int i = 0; i < length; i++) {
-	  cout<<"Code table for acion at action nmbr " <<i<<endl;
-	  for(int j = 0; j < MaxLegalMoves; j++){
-	    cout<<"Code : "<<j<<" -> "<<codeBestRollout [level] [i] [j]<<endl;
-	  }
-	}
-    }
-
-    /* Copy pol into pol adapt (assign same probs to the same move taking into account code change) */
   for (int i = 0; i < length; i++) {
     for (int j = 0; j < nbMovesBestRollout [level] [i]; j++)
       polAdapt.set (codeBestRollout [level] [i] [j], pol.get (codeBestRollout [level] [i] [j]));
   }
-
-
   for (int i = 0; i < length; i++) {
-    
-    /* For each move in bestrollout, increase the prob of the corresponding move by 1 */ 
     polAdapt.set (bestCodeBestRollout [level] [i], polAdapt.get (bestCodeBestRollout [level] [i]) + ALPHA);
     double z = 0.0;
-
-    /* Adjust probs */
-
-    /* sum probls for each move */ 
     for (int j = 0; j < nbMovesBestRollout [level] [i]; j++)
       z += exp (pol.get (codeBestRollout [level] [i] [j])); 
-
-    /* substract exp(policy(code(m))) see paper */
     for  (int j = 0; j < nbMovesBestRollout [level] [i]; j++)
       polAdapt.set (codeBestRollout [level] [i] [j], polAdapt.get (codeBestRollout [level] [i] [j]) - ALPHA * exp (pol.get (codeBestRollout [level] [i] [j])) / z); 
   }
-
-  /* Copy result into pol */ 
   for (int i = 0; i < length; i++) {
     for (int j = 0; j < nbMovesBestRollout [level] [i]; j++)
       pol.set (codeBestRollout [level] [i] [j], polAdapt.get (codeBestRollout [level] [i] [j]));
@@ -430,11 +385,8 @@ double nrpa(int level, Policy & pol) {
 	//alpha = 1.0;
 	scoreBestRollout [level] = score;
 	lengthBestRollout [level] = lengthBestRollout [level - 1];
-	/* Cpy best rollout from previous level */ 
 	for (int k = 0; k < lengthBestRollout [level]; k++)
 	  bestRollout [level] [k] = bestRollout [level - 1] [k];
-
-	/* Cpy best rellout for previous level into the current level */ 
 	for (int k = 0; k < lengthBestRollout [level]; k++) {
 	  bestCodeBestRollout [level] [k] = bestCodeBestRollout [level - 1] [k];
 	  nbMovesBestRollout [level] [k] = nbMovesBestRollout [level - 1] [k];
@@ -468,7 +420,6 @@ double nrpa(int level, Policy & pol) {
 
 void writeValues (int nbThreads) {
   char s [1000];
-  //  sprintf (s, "NRPA.time.nbThreads=%d.nbSearches=%d.k=%2.3f.epsilon=%2.4f.plot", nbThreads, nbSearchesNRPA, k, epsilon);
   sprintf (s, "NRPA.time.nbThreads=%d.nbSearches=%d.k=%2.3f", nbThreads, nbSearchesNRPA, k);
   FILE * fp = fopen (s, "w");
   if (fp != NULL) {
@@ -511,12 +462,7 @@ void testTimeNRPA (int level) {
       Policy pol;
       for (int i = 0; i <= level; i++)
 	polLevel [i] = pol;
-
       nrpa (level, pol);
-      for (int i = 0; i <= level; i++){
-	polLevel[i].print();
-      }
-
       if (indexTimeNRPA > nbTimesNRPA)
 	break;
     }
