@@ -1,0 +1,9 @@
+*.o 
+*~
+NRPA.time.*
+a.out
+blah
+tmp
+leftMove
+same
+lock
