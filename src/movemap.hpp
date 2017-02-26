@@ -31,6 +31,12 @@ public:
   /* get code from move, fail in DEBUG mode if move has not been registered */ 
   int code(const M &move) const;
 
+  /* get codes for many moves, fail in DEBUG mode if any move has not been registered */ 
+  void codes(const std::vector<const M> &moves, std::vector<int> *moveCodes) const; 
+
+  /* same as before, but for a set move provided as a C array */ 
+  void codes(const M *moves, int nbMoves, std::vector<int> *moveCodes) const; 
+
 
   /* Add a new move */ 
   int registerMove(const M &move); 
@@ -77,6 +83,24 @@ int MoveMap<M,H,EQ>::code(const M &move) const{
   assert(hit != _codes.end()); 
   return hit->second; 
 }
+
+template <typename M, typename H, typename EQ>
+void MoveMap<M,H,EQ>::codes(const std::vector<const M> &moves, std::vector<int> *moveCodes) const{
+  assert(moveCodes->empty()); 
+  moveCodes->reserve(moves.size()); 
+  for(auto move = moves.begin(); move != moves.end(); ++move)
+    moveCodes->push_back(code(*move)); 
+}
+
+template <typename M, typename H, typename EQ>
+void MoveMap<M,H,EQ>::codes(const M *moves, int nbMoves, std::vector<int> *moveCodes) const{ 
+  assert(moveCodes->empty()); 
+  moveCodes->reserve(nbMoves); 
+  const M *end = moves + nbMoves;
+  for(const M *move = moves; move != end; move++)
+    moveCodes->push_back(code(*move)); 
+}
+
 
 
 template <typename M, typename H, typename EQ>
