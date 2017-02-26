@@ -6,6 +6,7 @@
 
 #include<iostream>
 #include<algorithm>
+#include "nrpa.hpp"
 
 const int MaxSize = 15;
 const int MaxProblem = 20;
@@ -73,6 +74,16 @@ class Move {
     //print (stderr);
   }
 };
+
+  std::ostream &operator<<(std::ostream &os, const Move &m){
+    os<<"Hash: "<<m.hash<<" NbLocations: "<<m.nbLocations<<" Color: "<<m.color<<std::endl;
+    for(int i = 0; i < m.nbLocations; i++){
+      os<<m.locations[i]<<" "; 
+    }
+    os<<std::endl;
+    return os; 
+  }
+
 
 class Seen {
  public:
@@ -458,7 +469,7 @@ class Board {
   }
 
   int maxLegalMoves(){
-    return maxLegalMoves; 
+    return MaxLegalMoves; 
   }
 
   
@@ -743,13 +754,11 @@ void printHighScore (int i) {
 
 //#include "nestedSH.c"
 //#include "nested.c"
-#include "nrpa_inc.cpp"
 //#include "nrpauct.c"
 //#include "beamnrpa.c"
 //#include "beamuctnrpa.c"
 
 int main(int argc, char *argv []) {
-  constante = 1000.0;
   if (argc > 1) 
     pb = atoi (argv [1]);
   if (argc > 2)  {
@@ -783,8 +792,6 @@ int main(int argc, char *argv []) {
   if (argc > 5)  {
     kAMAF = atof (argv [3]);
     fprintf (stderr, "kAMAF = %f\n", kAMAF);
-    //constante = atof (argv [5]);
-    //fprintf (stderr, "constante = %f\n", constante);
     SizeBeam [3] = atoi (argv [5]);
   }
   if (argc > 6)  {
@@ -802,11 +809,6 @@ int main(int argc, char *argv []) {
   if (argc > 9)  {
     epsilon = atof (argv [9]);
     fprintf (stderr, "epsilon = %f\n", epsilon);
-  }
-
-  if (argc > 10)  {
-    constante = atof (argv [10]);
-    fprintf (stderr, "constante = %f\n", constante);
   }
 
   for (int i = 0; i < MaxSize * MaxSize; i++) {
@@ -833,32 +835,75 @@ int main(int argc, char *argv []) {
   //testTimeNRPA (5);
   levelPrint = 4;
   saveHighScore = true;
-  Policy pol;
-  double s = nrpa (4, pol);
-  exit (0);
-  /**/
-  int nb = 0;
-  double sum = 0.0;
-  while (true) {
-    Policy pol;
-    Board b;
-    /*
-    int nbMoves = b.legalMoves (moves);
-    for (int i = 0; i < MaxSize * MaxSize - MaxSize; i++) {
-      int c = HashArray [i] [secondBest] ^ HashArray [i + MaxSize] [secondBest];
-      pol [c & (MaxMoveNumber - 1)] = -1.0;
+
+  struct moveHasher{
+    int operator()(const Move &m){
+      return m.hash; 
     }
-    /**/
-    //nested (b, 3);
-    levelPrint = 4;
-    double s = nrpa (5, pol);
-    sum += s;
-    fprintf (stderr, "nb = %d\nbest score (pb %d) = %2.0lf\n", nb, pb, bestBoard.score ());
-    nb++;
-    fprintf (stderr, "mean score %2.0lf\n", sum / nb);
-    if (nb == 1)
-      break;
-  }
+  }; 
+
+  /* IMPORTANT NOTE about the eq operator:
+     If I understand correctly, hash collisions are ignored in this game. 
+     (i.e. it is assumed that no two moves can have the same hash value). 
+
+     In addition, the location array in the Move object is not always ordered in the same
+     way, which lead to incorrect comparison results when comparing two identical moves
+     (with a different order).
+
+     The proper way to fix this problem would be to keep locations ordered at all time.
+     However, this is costly and will lead to unfair benchmarking with previous version.
+     
+     So I stick to compare hash only for now. 
+  */
+
+  struct moveEq{
+    bool operator()(const Move &m1, const Move &m2){
+      return m1.hash == m2.hash;
+      // if(m1.nbLocations != m2.nbLocations) return false;
+      // const int *m1end = m1.locations + m1.nbLocations; 
+      // const int *m1p = m1.locations; 
+      // const int *m2p = m2.locations; 
+      // while(m1p < m1end){
+      // 	if(*m1p != *m2p)
+      // 	  return false;
+      // 	m1p++; m2p++;
+      // }
+      // return true; 
+    }
+  }; 
+
+
+  Nrpa<Board, Move, moveHasher, moveEq> nrpa(4); 
+  nrpa.nrpa(); 
+
+  exit (0);
+
+
+
+
+  // /**/
+  // int nb = 0;
+  // double sum = 0.0;
+  // while (true) {
+  //   Policy pol;
+  //   Board b;
+  //   /*
+  //   int nbMoves = b.legalMoves (moves);
+  //   for (int i = 0; i < MaxSize * MaxSize - MaxSize; i++) {
+  //     int c = HashArray [i] [secondBest] ^ HashArray [i + MaxSize] [secondBest];
+  //     pol [c & (MaxMoveNumber - 1)] = -1.0;
+  //   }
+  //   /**/
+  //   //nested (b, 3);
+  //   levelPrint = 4;
+  //   double s = nrpa (5, pol);
+  //   sum += s;
+  //   fprintf (stderr, "nb = %d\nbest score (pb %d) = %2.0lf\n", nb, pb, bestBoard.score ());
+  //   nb++;
+  //   fprintf (stderr, "mean score %2.0lf\n", sum / nb);
+  //   if (nb == 1)
+  //     break;
+  // }
   /**/
 }
 
