@@ -11,6 +11,18 @@
 #include "rollout.hpp"
 #include "movemap.hpp"
 
+/* Old constants kepts for compatibility with old game file. Their values are set to old defaults, they have no effect on the nrpa algorithm, but they might have an impact on the old game code. */
+extern const int MaxLevel; 
+extern double k;
+extern float constante;
+extern float kAMAF;
+extern double minNorm, maxNorm;
+extern int SizeBeam [];
+extern int levelPrint; 
+extern int startLearning;
+
+
+
 class Policy{
 
 public:
@@ -165,8 +177,12 @@ double Nrpa<B, M, H, EQ>::playout (const Policy & pol, Rollout *rollout) {
 
       double score = board.score(); 
 
-      rollout->setScore(score); 
-      rollout->addAllMoves(board.rollout, board.length); 
+      rollout->setScore(score);
+      std::vector<int> codes; 
+
+      _movemap.codes(board.rollout, board.length, &codes); 
+      // TODO lots of useless copies, at least this one can be avoided easily
+      rollout->addAllMoves(codes);  
 
       if( score > _bestScoreNRPA ) {
 	_bestScoreNRPA = score; 
@@ -214,15 +230,12 @@ double Nrpa<B, M, H, EQ>::playout (const Policy & pol, Rollout *rollout) {
       s += moveProbs[j];
     }
 
-    int selectedMove = moveCodes[j]; 
-
-    
-    // bestRollouts[0].addMove(selectedMove); 
-    // cout<<bestRollouts[0].length()<< " step "<<step<<endl;
-    // assert(bestRollouts[0].length() == step+1); // SURE? 
-
-    rollout->addMove(selectedMove); 
-    board.play(_movemap.move(selectedMove));
+    int newMoveCode = moveCodes[j];
+    M newMove = _movemap.move(newMoveCode); // this copy is required because
+                                            // move.play is non const
+   
+    rollout->addMove(newMoveCode); 
+    board.play(newMove);
   }
   return 0.0;  
 }
