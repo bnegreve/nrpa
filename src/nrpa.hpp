@@ -11,7 +11,10 @@
 #include "rollout.hpp"
 #include "movemap.hpp"
 
-/* Old constants kepts for compatibility with old game file. Their values are set to old defaults, they have no effect on the nrpa algorithm, but they might have an impact on the old game code. */
+/* Old constants kepts for compatibility with old game file. Their
+ * values are set to old defaults, they have no effect on the nrpa
+ * algorithm, but they might have an impact on the old game code. 
+ */
 extern const int MaxLevel; 
 extern double k;
 extern float constante;
@@ -68,7 +71,7 @@ public:
   static const int N = 10; 
 
   vector<Policy> policies; // one for each level 
-  vector<Rollout> bestRollouts; // one for each level (necessary?)
+  vector<Rollout> bestRollouts; // one for each level TODO: not used any more. 
 
   int _startLevel; 
   double _bestScoreNRPA = std::numeric_limits<double>::lowest(); 
@@ -200,7 +203,7 @@ double Nrpa<B, M, H, EQ>::playout (const Policy & pol, Rollout *rollout) {
     /* Get all legal moves for this stage, and register them a code if needed */ 
 
     /* Compatibility code, a bit redudant but required to work with standard Board class */ 
-    std::vector<M> legalMoves(board.maxLegalMoves());   // could be static if no parallel code is used 
+    std::vector<M> legalMoves(board.maxLegalMoves());
     int nbMoves = board.legalMoves(&legalMoves.front());
     legalMoves.resize(nbMoves); 
 
@@ -239,8 +242,5 @@ double Nrpa<B, M, H, EQ>::playout (const Policy & pol, Rollout *rollout) {
   }
   return 0.0;  
 }
-
-
-
 
 #endif 
