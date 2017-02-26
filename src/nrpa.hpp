@@ -184,8 +184,8 @@ double Nrpa<B, M, H, EQ>::playout (const Policy & pol, Rollout *rollout) {
       rollout->setScore(score);
       std::vector<int> codes; 
 
-      _movemap.codes(board.rollout, board.length, &codes); 
-      // TODO lots of useless copies, at least this one can be avoided easily
+      // TODO copy inside addAllMoves can be avoided by passing the poitner 
+      _movemap.codes(board.rollout, board.length, &codes);       
       rollout->addAllMoves(codes);  
 
       if( score > _bestScoreNRPA ) {
@@ -197,30 +197,33 @@ double Nrpa<B, M, H, EQ>::playout (const Policy & pol, Rollout *rollout) {
       return score; 
     }
 
-    /* board is at a non terminal step */
+    /* board is at a non terminal step ... */
+
     int step = board.length; 
       
 
-    /* Get all legal moves for this stage, and register them a code if needed */ 
+    /* Get all legal moves for this stage */ 
 
-    /* Compatibility code, a bit redudant but required to work with standard Board class */ 
-    std::vector<M> legalMoves(board.maxLegalMoves());
+    vector<M> legalMoves(board.maxLegalMoves()); 
     int nbMoves = board.legalMoves(&legalMoves.front());
     legalMoves.resize(nbMoves); 
+    
+    /* Fetch the code for each legal moves, and store all legal move
+     * codes directly in the Rollout object */ 
 
-    /* Fetch move codes from the movemap */ 
-    std::vector<int> moveCodes(nbMoves);
+    vector<int> *legalMoveCodes = rollout->legalMoveStorage(step, nbMoves); 
     for(int i = 0; i < nbMoves; i++){
       int code = _movemap.registerMove(legalMoves[i]);
-      moveCodes[i] = code; 
+      (*legalMoveCodes)[i] = code; 
     }
 
     /* Compute probs for each move (code) */ 
+
     vector<double> moveProbs(nbMoves); 
     double sum = 0; 
 
     for (int i = 0; i < nbMoves; i++) {
-      double prob = exp(pol.prob(moveCodes[i])); 
+      double prob = exp(pol.prob( (*legalMoveCodes)[i] )); 
       moveProbs[i] = prob;
       sum += prob; 
     }
@@ -234,7 +237,7 @@ double Nrpa<B, M, H, EQ>::playout (const Policy & pol, Rollout *rollout) {
       s += moveProbs[j];
     }
 
-    int newMoveCode = moveCodes[j];
+    int newMoveCode = (*legalMoveCodes)[j];
     M newMove = _movemap.move(newMoveCode); // this copy is required because
                                             // move.play is non const
    

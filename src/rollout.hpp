@@ -41,10 +41,32 @@ public:
   inline void addAllMoves(const std::vector<int> &rolloutCodes){
     copy(rolloutCodes.begin(), rolloutCodes.end(), this->begin()); }
   inline void addAllMoves(int *rolloutCodes, int length){ this->resize(length); copy(rolloutCodes, rolloutCodes + length, this->begin()); }
-    
+
+  /* Store all legal move codes for step */
+  inline void setLegalMoves(int step, const std::vector<int> &legalMoves){
+    assert(step == _legalMoves.size()); 
+    _legalMoves.resize(step + 1, legalMoves);
+  }
+
+  inline void setLegalMoves(int step, int *legalMoves, int nbMoves){
+    assert(step == _legalMoves.size()); 
+    _legalMoves.resize(step + 1, std::vector<int>(0));
+    _legalMoves[step].resize(nbMoves);
+    copy(legalMoves, legalMoves + nbMoves, _legalMoves[step].begin());
+  }
+  
+  /* Required to avoid one useless copy */ 
+  inline std::vector<int> *legalMoveStorage(int step, int maxMoves){
+    assert(step == _legalMoves.size()); 
+    _legalMoves.resize(step + 1, std::vector<int>(0));
+    _legalMoves[step].resize(maxMoves); 
+    return &_legalMoves[step]; 
+  }
+  
 private:
     int _level; 
     double _score; 
+    std::vector<std::vector<int>> _legalMoves;  // possible move codes for stage i
 }; 
 
 
