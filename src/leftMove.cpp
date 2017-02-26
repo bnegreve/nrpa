@@ -21,6 +21,8 @@
 #include <sys/time.h>
 #include <sys/resource.h> 
 
+#include "nrpa.hpp"
+
 using namespace std;
 
 const int MaxMoveNumber = 2;
@@ -53,6 +55,8 @@ class Board {
     return 2;
   }
 
+  int maxLegalMoves(){ return 2; }
+  
   void play (Move m) {
     if (m == 0)
       nbMovesLeft++;
@@ -73,27 +77,29 @@ class Board {
   }
 };
 
-//#include "nestedSH.c"
-//#include "nested.c"
-//#include "nestedSimple.c"
-#include "nrpa.cpp"
-//#include "beamnrpa.c"
-
 int main(int argc, char *argv []) {
-  //testTimeNested (3);
-  testTimeNRPA (4);
-  exit (0);
-  while (true) {
-    double pol [MaxMoveNumber];
-    for (int i = 0 ; i < MaxMoveNumber ; i++)
-      pol [i] = 0;
-    Board b;
-    //testTimeNested (3);
-    break;
-    //nested (b, 4);
-    //nrpa (4, pol);
-    fprintf (stderr, "score final : ");
-    bestBoard.print (stderr);
-    fprintf (stderr, "\n");
-  }
+
+  Nrpa<Board, Move> nrpa(4);
+
+  nrpa.nrpa(); 
+
+
+
+  //  Nrpa<Board, Move>; 
+  // //testTimeNested (3);
+  // testTimeNRPA (4);
+  // exit (0);
+  // while (true) {
+  //   double pol [MaxMoveNumber];
+  //   for (int i = 0 ; i < MaxMoveNumber ; i++)
+  //     pol [i] = 0;
+  //   Board b;
+  //   //testTimeNested (3);
+  //   break;
+  //   //nested (b, 4);
+  //   //nrpa (4, pol);
+  //   fprintf (stderr, "score final : ");
+  //   bestBoard.print (stderr);
+  //   fprintf (stderr, "\n");
+  // }
 }
