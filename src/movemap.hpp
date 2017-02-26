@@ -28,12 +28,12 @@ public:
   /* get move from code */ 
   const M &move(int code) const; 
 
-  /* get code from move, fail in DEBUG mode if code does not exist */ 
-  int code(const M &m) const;
+  /* get code from move, fail in DEBUG mode if move has not been registered */ 
+  int code(const M &move) const;
+
 
   /* Add a new move */ 
-  int registerMove(const M &m); 
-  
+  int registerMove(const M &move); 
 
 private:
 
@@ -72,21 +72,21 @@ const M &MoveMap<M,H,EQ>::move(int code) const {
   }
 
 template <typename M, typename H, typename EQ>
-int MoveMap<M,H,EQ>::code(const M &m) const{
-  auto hit = _codes.find(&m);
+int MoveMap<M,H,EQ>::code(const M &move) const{
+  auto hit = _codes.find(&move);
   assert(hit != _codes.end()); 
   return hit->second; 
 }
 
 
 template <typename M, typename H, typename EQ>
-int MoveMap<M,H,EQ>::registerMove(const M &m){
-  auto hit = _codes.find(&m);
+int MoveMap<M,H,EQ>::registerMove(const M &move){
+  auto hit = _codes.find(&move);
 
   if(hit == _codes.end()){
     /* this is a new move */ 
     int newCode = _moves.size(); 
-    _moves.push_back(new M(m)); 
+    _moves.push_back(new M(move)); 
     _codes[ _moves.back() ] = newCode; 
     return newCode; 
   }
