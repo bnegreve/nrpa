@@ -1,19 +1,20 @@
 all: leftMove same
 
-CXXFLAGS=-O3 -g
+CXXFLAGS=-O3 -g -DNDEBUG
 #CXXFLAGS=-O0 --no-inline  -g
 
 
-OBJS=rollout.o nrpa.o movemap.cpp
+OBJS=rollout.o nrpa.o movemap.o
 
 %.o: %.cpp %.hpp
-	$(CC) $(CXXFLAGS) -o $@ -c $< 
+	$(CXX) $(CXXFLAGS) -o $@ -c $< 
 
-leftMove: leftMove.cpp nrpa_inc.cpp $(OBJS) 
-	g++ $(CXXFLAGS) -o $@ $< $(OBJS)  
+leftMove: leftMove.cpp nrpa.hpp $(OBJS) 
+	$(CXX) $(CXXFLAGS) -o $@ $< $(OBJS)  
 
-same: same.cpp nrpa_inc.cpp $(OBJS)
-	g++ $(CXXFLAGS) -o $@ $< $(OBJS)
+same: same.cpp nrpa.hpp $(OBJS)
+	$(CXX) $(CXXFLAGS) -o $@ $< $(OBJS)
 
-leftMove2: leftMove2.cpp nrpa.hpp $(OBJS) 
-	g++ $(CXXFLAGS) -o $@ $< $(OBJS)  
+clean:
+	rm -rf *.o same leftMove *~
+
