@@ -50,40 +50,5 @@ std::ostream &operator<<(std::ostream &, const Rollout &);
 std::istream &operator>>(std::istream &is, Rollout &r); 
 
 
-/* Maps arbitrary move code to an id ranging from 1 to n */
-class CodeMap{
-
-public:
-
-  /* Add a move into the code map and return its code */
-  inline int addMove(int m){
-    _moves.push_back(m);
-    return _moves.size() - 1; // move id
-  }
-
-  /* get the code of a move */ 
-  inline int code(int move) const{
-    assert(false); 
-  }
-
-  /* get the move corresponding to a code */ 
-  inline int move(int code){
-    assert(code < _moves.size()); 
-    return _moves[code]; 
-  }
-
-  inline int numMoves() const{
-    return _moves.size(); 
-  }
-
-  
-private:
-
-  vector<int> _moves; 
-
-}; 
-
-
-
 
 #endif
