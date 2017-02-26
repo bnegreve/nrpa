@@ -75,6 +75,8 @@ class Nrpa{
 public:
 
   static const int N = 10; 
+  static constexpr double ALPHA = 1.0; 
+
 
   vector<Policy> policies; // one for each level 
   vector<Rollout> bestRollouts; // one for each level TODO: not used any more. 
@@ -99,7 +101,7 @@ public:
   double nrpa(int level, Policy & pol, Rollout *bestRollout); 
   double playout (const Policy & pol, Rollout *bestRollout);
 
-  void updatePolicy(); 
+  void updatePolicy(const Rollout &rollout, Policy *policy); 
 
 
   inline void printPolicy(std::ostream &os, int level) const{
@@ -136,7 +138,7 @@ double Nrpa<B,M,H,EQ>::nrpa(int level, Policy &pol, Rollout *bestRollout){
     return playout (pol, bestRollout); 
   }
   else {
-    policies [level] = pol;
+    policies [level] = pol; // TODO: Is this copy necessary ? 
     Policy &policy = policies[level]; 
 
     int last = 0;
@@ -154,10 +156,10 @@ double Nrpa<B,M,H,EQ>::nrpa(int level, Policy &pol, Rollout *bestRollout){
 	    fprintf (stderr, "\t");
 	  fprintf(stderr,"Level : %d, N:%d, score : %f\n", level, i, score);
 	}
-      }
 
-      //	adaptLevel (bestRollouts [level], level, policies [level]);
-      updatePolicy(); 
+	/* Update policy only a new best sequence is found. */ 
+	updatePolicy(*bestRollout, &policy); 
+      }
 
       // TODO : fix 
       // if (stopOnTime && (indexTimeNRPA > nbTimesNRPA))
@@ -168,13 +170,29 @@ double Nrpa<B,M,H,EQ>::nrpa(int level, Policy &pol, Rollout *bestRollout){
 }
 
 template <typename B,typename  M,typename  H,typename EQ>
-void Nrpa<B,M,H,EQ>::updatePolicy(){
-  //TODO 
-  
+void Nrpa<B,M,H,EQ>::updatePolicy(const Rollout &rollout, Policy *policy){
+  double z = 0.; 
+
+  for(int step = 0; step < rollout.length(); step++){
+    int code = rollout.move(step); 
+    policy->updateProb(code, ALPHA); 
+
+    const std::vector<int> &legalMoves = rollout.legalMoves(step); 
+    for(auto code = legalMoves.begin(); code != legalMoves.end(); ++code)
+      z += exp (policy->prob( *code ));
+
+    for(auto code = legalMoves.begin(); code != legalMoves.end(); ++code)
+      policy->updateProb( *code, - ALPHA * exp (policy->prob( *code )) / z ); 
+  }
 }
+
+  
+/* This code contains number of copies which are required to work with
+ * standard Board class, so beware before optimizing.  */ 
 
 template <typename B,typename  M,typename  H,typename EQ>
 double Nrpa<B, M, H, EQ>::playout (const Policy & pol, Rollout *rollout) {
+
   using namespace std; 
   assert(rollout->length() == 0); 
   
