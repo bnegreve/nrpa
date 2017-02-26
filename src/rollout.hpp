@@ -38,7 +38,9 @@ public:
   inline int level() const { return _level; }
   inline int setScore(int score) { _score = score; }
   inline void addMove(int code){ this->push_back(code); }
-  inline void addAllMoves(int *rolloutData, int length){ this->resize(length); copy(rolloutData, rolloutData + length, this->begin()); }
+  inline void addAllMoves(const std::vector<int> &rolloutCodes){
+    copy(rolloutCodes.begin(), rolloutCodes.end(), this->begin()); }
+  inline void addAllMoves(int *rolloutCodes, int length){ this->resize(length); copy(rolloutCodes, rolloutCodes + length, this->begin()); }
     
 private:
     int _level; 
