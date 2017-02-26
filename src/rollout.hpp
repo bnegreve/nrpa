@@ -36,7 +36,10 @@ public:
   inline int length() const { return size(); }
   inline int score() const { return _score; }
   inline int level() const { return _level; }
+  inline int move(int step) const { assert(step < length()); return (*this)[step]; }
+
   inline int setScore(int score) { _score = score; }
+
   inline void addMove(int code){ this->push_back(code); }
   inline void addAllMoves(const std::vector<int> &rolloutCodes){
     copy(rolloutCodes.begin(), rolloutCodes.end(), this->begin()); }
@@ -61,6 +64,11 @@ public:
     _legalMoves.resize(step + 1, std::vector<int>(0));
     _legalMoves[step].resize(maxMoves); 
     return &_legalMoves[step]; 
+  }
+
+  inline const std::vector<int> &legalMoves(int step) const{
+    assert(step < _legalMoves.size());
+    return _legalMoves[step]; 
   }
   
 private:
