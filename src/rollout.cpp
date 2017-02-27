@@ -63,9 +63,9 @@ ostream &operator<<(ostream &os, const Rollout &r){
   os<<r.length()<<" "; 
   os<<r._level<<" "; 
   os<<r._score<<" "; 
-  for(auto it = r.begin(); it != r.end() - 1; it++)
+  for(auto it = r.begin(); it != r.end(); it++)
     os<<*it<<" "; 
-  if(r.length() > 0) os<<r.back();
+  //  if(r.length() > 0) os<<r.back();
   return os; 
 }
 
