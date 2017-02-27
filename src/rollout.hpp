@@ -34,7 +34,7 @@ public:
 
   inline const int *data() const { return &front(); }
   inline int length() const { return size(); }
-  inline int score() const { return _score; }
+  inline double score() const { return _score; }
   inline int level() const { return _level; }
   inline int move(int step) const { assert(step < length()); return (*this)[step]; }
 

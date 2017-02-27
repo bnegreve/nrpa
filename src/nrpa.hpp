@@ -160,10 +160,9 @@ double Nrpa<B,M,H,EQ>::nrpa(int level, Policy &pol, Rollout *bestRollout){
 	(*bestRollout) = rollout; 
 	
 	if (level > 2) {
-	  double score = bestRollout->score();
 	  for (int t = 0; t < level - 1; t++)
 	    fprintf (stderr, "\t");
-	  fprintf(stderr,"Level : %d, N:%d, score : %f\n", level, i, score);
+	  fprintf(stderr,"Level : %d, N:%d, score : %f\n", level, i, bestRollout->score());
 	}
 
 	/* Update policy only a new best sequence is found. */ 
