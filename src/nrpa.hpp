@@ -63,6 +63,15 @@ public:
     os<<"End of Policy"<<std::endl; 
   }
 
+  template <typename X, typename Y, typename Z>
+  inline void print(std::ostream &os, const MoveMap<X,Y,Z> &movemap) const{
+    os<<"Policy: "<<std::endl; 
+    for(auto it = _probs.begin(); it != _probs.end(); ++it){
+      os<<"\tCode : "<<movemap.move(it->first).hash<<" prob: "<<it->second<<std::endl;
+    }
+    os<<"End of Policy"<<std::endl; 
+  }
+
 private: 
   std::map<int, double> _probs; 
 };
