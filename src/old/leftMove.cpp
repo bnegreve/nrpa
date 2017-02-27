@@ -76,7 +76,7 @@ class Board {
 //#include "nestedSH.c"
 //#include "nested.c"
 //#include "nestedSimple.c"
-#include "nrpa.c"
+#include "nrpa.cpp"
 //#include "beamnrpa.c"
 
 int main(int argc, char *argv []) {
