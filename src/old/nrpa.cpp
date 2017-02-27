@@ -254,7 +254,7 @@ double playoutNRPA (Policy & pol) {
       /**/
       probaMove [i] = exp (pol.get (c));
 
-      pol.print();
+      //      pol.print();
       codeBestRollout [0] [board.length] [i] = c;
     }
 	
