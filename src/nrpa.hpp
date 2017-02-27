@@ -180,19 +180,24 @@ double Nrpa<B,M,H,EQ>::nrpa(int level, Policy &pol, Rollout *bestRollout){
 
 template <typename B,typename  M,typename  H,typename EQ>
 void Nrpa<B,M,H,EQ>::updatePolicy(const Rollout &rollout, Policy *policy){
-  double z = 0.; 
+
+  Policy newPol = *policy; //TODO remove this useless copy!!
 
   for(int step = 0; step < rollout.length(); step++){
-    int code = rollout.move(step); 
-    policy->updateProb(code, ALPHA); 
+    int move = rollout.move(step); 
+    newPol.updateProb(move, ALPHA); 
 
+    double z = 0.; 
     const std::vector<int> &legalMoves = rollout.legalMoves(step); 
-    for(auto code = legalMoves.begin(); code != legalMoves.end(); ++code)
-      z += exp (policy->prob( *code ));
-
-    for(auto code = legalMoves.begin(); code != legalMoves.end(); ++code)
-      policy->updateProb( *code, - ALPHA * exp (policy->prob( *code )) / z ); 
+    for(auto move = legalMoves.begin(); move != legalMoves.end(); ++move)
+      z += exp (policy->prob( *move ));
+  
+    for(auto move = legalMoves.begin(); move != legalMoves.end(); ++move){
+      newPol.updateProb( *move, - ALPHA * (exp (policy->prob( *move )) / z ));
+    }
   }
+
+  (*policy) = newPol; 
 }
 
   
