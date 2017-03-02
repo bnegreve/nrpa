@@ -223,7 +223,7 @@ double Nrpa<B, M, H, EQ>::playout (const Policy & pol, Rollout *rollout) {
 
       // TODO copy inside addAllMoves can be avoided by passing the poitner 
       _movemap.codes(board.rollout, board.length, &codes);       
-      rollout->addAllMoves(codes);  
+      rollout->setMoves(codes);  
 
       if( score > _bestScoreNRPA ) {
 	_bestScoreNRPA = score; 
@@ -277,8 +277,6 @@ double Nrpa<B, M, H, EQ>::playout (const Policy & pol, Rollout *rollout) {
     int newMoveCode = (*legalMoveCodes)[j];
     M newMove = _movemap.move(newMoveCode); // this copy is required because
                                             // move.play is non const
-   
-    rollout->addMove(newMoveCode); 
     board.play(newMove);
   }
   return 0.0;  

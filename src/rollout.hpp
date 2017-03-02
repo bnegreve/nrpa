@@ -41,8 +41,11 @@ public:
   inline int setScore(int score) { _score = score; }
 
   inline void addMove(int code){ this->push_back(code); }
-  inline void addAllMoves(const std::vector<int> &rolloutCodes){
-    copy(rolloutCodes.begin(), rolloutCodes.end(), this->begin()); }
+
+  inline void setMoves(std::vector<int> rolloutCodes){
+    this->swap(rolloutCodes); 
+  }
+
   inline void addAllMoves(int *rolloutCodes, int length){ this->resize(length); copy(rolloutCodes, rolloutCodes + length, this->begin()); }
 
   /* Store all legal move codes for step */
