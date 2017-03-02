@@ -225,11 +225,11 @@ double Nrpa<B, M, H, EQ>::playout (const Policy & pol, Rollout *rollout) {
       _movemap.codes(board.rollout, board.length, &codes);       
       rollout->setMoves(codes);  
 
-      if( score > _bestScoreNRPA ) {
-	_bestScoreNRPA = score; 
-	_bestBoard = board;
-	board.print (stderr);
-      }
+      // if( score > _bestScoreNRPA ) {
+      // 	_bestScoreNRPA = score; 
+      // 	_bestBoard = board;
+      // 	board.print (stderr);
+      // }
 	
       return score; 
     }
