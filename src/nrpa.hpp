@@ -5,7 +5,7 @@
 #ifndef NRPA_HPP
 #define NRPA_HPP
 
-#include <map>
+#include <unordered_map>
 #include <cmath>
 #include <limits>
 #include "rollout.hpp"
@@ -73,7 +73,7 @@ public:
   }
 
 private: 
-  std::map<int, double> _probs; 
+  std::unordered_map<int, double> _probs; 
 };
 
 template <typename B, typename M,
