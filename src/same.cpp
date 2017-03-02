@@ -855,20 +855,36 @@ int main(int argc, char *argv []) {
      
      So I stick to compare hash only for now. 
   */
-
   struct moveEq{
     bool operator()(const Move &m1, const Move &m2){
-      return m1.hash == m2.hash;
-      // if(m1.nbLocations != m2.nbLocations) return false;
-      // const int *m1end = m1.locations + m1.nbLocations; 
-      // const int *m1p = m1.locations; 
-      // const int *m2p = m2.locations; 
-      // while(m1p < m1end){
-      // 	if(*m1p != *m2p)
-      // 	  return false;
-      // 	m1p++; m2p++;
-      // }
-      // return true; 
+      if (m1.hash == m2.hash){
+	if(m1.nbLocations == m2.nbLocations)
+	  if(m1.color == m2.color){ // TODO is it necessary to compare  color, what about penalty
+	    //TODO would be better if we could always have locations
+	    //sorted, but it's complicated. However, this should not happen too often
+	    // same hash and same number of locations is unlikely
+	    
+	    // TODO should we check colors as well? 
+
+	    Move m1c = m1; 
+	    Move m2c = m2;
+	    m1c.sort();
+	    m2c.sort(); 
+
+	    /* compare sorted locations */ 
+	    if(m1c.nbLocations != m2c.nbLocations) return false;
+	    const int *m1end = m1c.locations + m1c.nbLocations; 
+	    const int *m1p = m1c.locations; 
+	    const int *m2p = m2c.locations; 
+	    while(m1p < m1end){
+	      if(*m1p != *m2p)
+		return false;
+	      m1p++; m2p++;
+	    }
+	    return true; 
+	  }
+      }
+      return false; 
     }
   }; 
 
