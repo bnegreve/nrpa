@@ -64,8 +64,7 @@ public:
   /* Required to avoid one useless copy */ 
   inline std::vector<int> *legalMoveStorage(int step, int maxMoves){
     assert(step == _legalMoves.size()); 
-    _legalMoves.resize(step + 1, std::vector<int>(0));
-    _legalMoves[step].resize(maxMoves); 
+    _legalMoves.resize(step + 1, std::vector<int>(maxMoves));
     return &_legalMoves[step]; 
   }
 
