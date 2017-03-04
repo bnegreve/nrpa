@@ -86,7 +86,7 @@ public:
   static const int N = 10; 
   static constexpr double ALPHA = 1.0; 
 
-
+  int _level; 
   Policy _policy; 
   Rollout _bestRollout; 
   
@@ -94,22 +94,15 @@ public:
   // vector<int> _bestRollout; // the codes of the moves of the best rollout
   // vector<vector<int>> _legalMoves; // _legalMoves[i][j] is the code of
 				   // the legal move j at step i.
-
-
-  int _startLevel; 
-
-  clock_t startClockNRPA, stopClockNRPA;
-
   MoveMap<M, H, EQ> *_movemap; 
   B _bestBoard; 
 
+
+
 public:
 
-  Nrpa(int startLevel);
-
+  Nrpa(int level);
   double run(); 
-
-  double run(int level); 
   double playout ();
   void updatePolicy(const Rollout &rollout); 
   inline double bestScore(){ return _bestRollout.score(); }
@@ -123,25 +116,15 @@ public:
 }; 
 
 template <typename B,typename  M,typename  H,typename EQ>
-Nrpa<B,M,H,EQ>::Nrpa(int startLevel): _startLevel(startLevel){
+Nrpa<B,M,H,EQ>::Nrpa(int level): _level(level){
   _movemap = new MoveMap<M,H,EQ>(); 
 }
 
 template <typename B,typename  M,typename  H,typename EQ>
 double Nrpa<B,M,H,EQ>::run(){
-  Policy p;
-  double score = run(_startLevel);
-  std::cout<<_bestRollout<<std::endl;
-  return score; 
-  
-}
-
-template <typename B,typename  M,typename  H,typename EQ>
-double Nrpa<B,M,H,EQ>::run(int level){
   using namespace std; 
-  //    scoreBestRollout [level] = -DBL_MAX;
 
-  if (level == 0) {
+  if (_level == 0) {
     return playout(); 
   }
   else {
@@ -149,19 +132,19 @@ double Nrpa<B,M,H,EQ>::run(int level){
     int last = 0;
 
     for (int i = 0; i < N; i++) {
-      Nrpa sub(level); 
+      Nrpa sub(_level - 1); 
       sub._policy = _policy;
       sub._movemap = _movemap; //TODO FIX
-      sub.run (level - 1);
+      sub.run();
 
       if (sub.bestScore() >= _bestRollout.score()) {
 	last = i;
 	_bestRollout = sub._bestRollout; // TODO swap vector content to save a copy
 	
-	if (level > 2) {
-	  for (int t = 0; t < level - 1; t++)
+	if (_level > 2) {
+	  for (int t = 0; t < _level - 1; t++)
 	    fprintf (stderr, "\t");
-	  fprintf(stderr,"Level : %d, N:%d, score : %f\n", level, i, _bestRollout.score());
+	  fprintf(stderr,"Level : %d, N:%d, score : %f\n", _level, i, _bestRollout.score());
 	}
 
       }
