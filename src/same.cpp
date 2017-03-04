@@ -890,7 +890,7 @@ int main(int argc, char *argv []) {
 
 
   Nrpa<Board, Move, moveHasher, moveEq> nrpa(4); 
-  nrpa.nrpa(); 
+  nrpa.run(); 
 
   exit (0);
 
