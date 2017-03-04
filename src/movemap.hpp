@@ -22,6 +22,7 @@ class MoveMap{
 
 public:
 
+  MoveMap();
 
   ~MoveMap();
   
@@ -63,6 +64,12 @@ private:
 
 
 /* Template definitions */
+template <typename M, typename H, typename EQ>
+MoveMap<M,H,EQ>::MoveMap():_moves(), _codes(){
+  // _moves.reserve(1024*1024);
+  // _codes.max_load_factor(0.5); 
+  
+}
 
 template <typename M, typename H, typename EQ>
 MoveMap<M,H,EQ>::~MoveMap(){
@@ -105,6 +112,11 @@ void MoveMap<M,H,EQ>::codes(const M *moves, int nbMoves, std::vector<int> *moveC
 
 template <typename M, typename H, typename EQ>
 int MoveMap<M,H,EQ>::registerMove(const M &move){
+  // if(_codes.size() % 1000 == 0) 
+  //   std::cout<<"MAP SIZE "<<_codes.size() / 1E3<<"K "
+  // 	     <<" "<< sizeof(M) * _codes.size() / 1E6
+  // 	     <<" load factor "<<_codes.load_factor()
+  // 	     <<std::endl;
   auto hit = _codes.find(&move);
 
   if(hit == _codes.end()){
