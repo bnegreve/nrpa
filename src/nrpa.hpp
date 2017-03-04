@@ -114,9 +114,9 @@ public:
   double run(); 
 
   double run(int level); 
-  double playout (const Policy & pol, Rollout *rollout);
+  double playout ();
 
-  void updatePolicy(const Rollout &rollout, Policy *policy); 
+  void updatePolicy(const Rollout &rollout); 
 
 
   inline void printPolicy(std::ostream &os, int level) const{
@@ -147,7 +147,7 @@ double Nrpa<B,M,H,EQ>::run(int level){
   //    scoreBestRollout [level] = -DBL_MAX;
 
   if (level == 0) {
-    return playout (_policy, &_bestRollout); 
+    return playout(); 
   }
   else {
 
@@ -172,7 +172,7 @@ double Nrpa<B,M,H,EQ>::run(int level){
       }
 
       /* Update policy only a new best sequence is found. */ 
-      updatePolicy(_bestRollout, &_policy); 
+      updatePolicy(_bestRollout); 
 
       // TODO : fix 
       // if (stopOnTime && (indexTimeNRPA > nbTimesNRPA))
@@ -183,9 +183,9 @@ double Nrpa<B,M,H,EQ>::run(int level){
 }
 
 template <typename B,typename  M,typename  H,typename EQ>
-void Nrpa<B,M,H,EQ>::updatePolicy(const Rollout &rollout, Policy *policy){
+void Nrpa<B,M,H,EQ>::updatePolicy(const Rollout &rollout){
 
-  Policy newPol = *policy; //TODO remove this useless copy!!
+  Policy newPol = _policy; //TODO remove this useless copy!!
 
   for(int step = 0; step < rollout.length(); step++){
     int move = rollout.move(step); 
@@ -194,14 +194,14 @@ void Nrpa<B,M,H,EQ>::updatePolicy(const Rollout &rollout, Policy *policy){
     double z = 0.; 
     const std::vector<int> &legalMoves = rollout.legalMoves(step); 
     for(auto move = legalMoves.begin(); move != legalMoves.end(); ++move)
-      z += exp (policy->prob( *move ));
+      z += exp (_policy.prob( *move ));
   
     for(auto move = legalMoves.begin(); move != legalMoves.end(); ++move){
-      newPol.updateProb( *move, - ALPHA * (exp (policy->prob( *move )) / z ));
+      newPol.updateProb( *move, - ALPHA * (exp (_policy.prob( *move )) / z ));
     }
   }
 
-  (*policy) = newPol; 
+  _policy = newPol; 
 }
 
   
@@ -209,10 +209,10 @@ void Nrpa<B,M,H,EQ>::updatePolicy(const Rollout &rollout, Policy *policy){
  * standard Board class, so beware before optimizing.  */ 
 
 template <typename B,typename  M,typename  H,typename EQ>
-double Nrpa<B, M, H, EQ>::playout (const Policy & pol, Rollout *rollout) {
+double Nrpa<B, M, H, EQ>::playout () {
 
   using namespace std; 
-  assert(rollout->length() == 0); 
+  assert(_bestRollout.length() == 0); 
   
   B board; 
  
@@ -222,12 +222,12 @@ double Nrpa<B, M, H, EQ>::playout (const Policy & pol, Rollout *rollout) {
 
       double score = board.score(); 
 
-      rollout->setScore(score);
+      _bestRollout.setScore(score);
       std::vector<int> codes; 
 
       // TODO copy inside addAllMoves can be avoided by passing the poitner 
       _movemap->codes(board.rollout, board.length, &codes);       
-      rollout->setMoves(codes);  
+      _bestRollout.setMoves(codes);  
 
       // if( score > _bestScoreNRPA ) {
       // 	_bestScoreNRPA = score; 
@@ -252,7 +252,7 @@ double Nrpa<B, M, H, EQ>::playout (const Policy & pol, Rollout *rollout) {
     /* Fetch the code for each legal moves, and store all legal move
      * codes directly in the Rollout object */ 
 
-    vector<int> *legalMoveCodes = rollout->legalMoveStorage(step, nbMoves); 
+    vector<int> *legalMoveCodes = _bestRollout.legalMoveStorage(step, nbMoves); 
     for(int i = 0; i < nbMoves; i++){
       int code = _movemap->registerMove(legalMoves[i]);
       (*legalMoveCodes)[i] = code; 
@@ -264,7 +264,7 @@ double Nrpa<B, M, H, EQ>::playout (const Policy & pol, Rollout *rollout) {
     double sum = 0; 
 
     for (int i = 0; i < nbMoves; i++) {
-      double prob = exp(pol.prob( (*legalMoveCodes)[i] )); 
+      double prob = exp(_policy.prob( (*legalMoveCodes)[i] )); 
       moveProbs[i] = prob;
       sum += prob; 
     }
