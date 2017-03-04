@@ -97,17 +97,13 @@ public:
 
 
   int _startLevel; 
-  double _bestScoreNRPA = std::numeric_limits<double>::lowest(); 
 
   clock_t startClockNRPA, stopClockNRPA;
-  // double nextTimeNRPA = 0.01;
-  // int indexTimeNRPA;
-  // int indexSearch;
-  //  float valueAfterTimeNRPA [10000] [100];
-  // float sumValueAfterTimeNRPA [100];
-  // int nbSearchTimeNRPA [100];
+
   MoveMap<M, H, EQ> *_movemap; 
   B _bestBoard; 
+
+public:
 
   Nrpa(int startLevel);
 
@@ -115,8 +111,8 @@ public:
 
   double run(int level); 
   double playout ();
-
   void updatePolicy(const Rollout &rollout); 
+  inline double bestScore(){ return _bestRollout.score(); }
 
 
   inline void printPolicy(std::ostream &os, int level) const{
@@ -134,9 +130,8 @@ Nrpa<B,M,H,EQ>::Nrpa(int startLevel): _startLevel(startLevel){
 template <typename B,typename  M,typename  H,typename EQ>
 double Nrpa<B,M,H,EQ>::run(){
   Policy p;
-  Rollout r; 
   double score = run(_startLevel);
-  std::cout<<r<<std::endl;
+  std::cout<<_bestRollout<<std::endl;
   return score; 
   
 }
@@ -159,9 +154,9 @@ double Nrpa<B,M,H,EQ>::run(int level){
       sub._movemap = _movemap; //TODO FIX
       sub.run (level - 1);
 
-      if (sub._bestRollout.score() >= _bestRollout.score()) {
+      if (sub.bestScore() >= _bestRollout.score()) {
 	last = i;
-	_bestRollout = sub._bestRollout; 
+	_bestRollout = sub._bestRollout; // TODO swap vector content to save a copy
 	
 	if (level > 2) {
 	  for (int t = 0; t < level - 1; t++)
