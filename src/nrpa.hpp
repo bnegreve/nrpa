@@ -91,9 +91,7 @@ public:
   Policy _policy; 
   Rollout _bestRollout; 
   
-  vector<M> _bestRolloutMoves;
-
-  vector<MoveMap<M, H, EQ>> _movemaps; //_movemaps[i] maps valid moves to code moves. There is one mapping for each step i in the rollout.
+  vector<M> _bestRolloutMoves; // TODO store moves 
 
   vector<vector<int>> _legalMoveCodes; // codes of every legal moves at step i
   B _bestBoard; 
@@ -108,6 +106,16 @@ public:
   void updatePolicy(const Rollout &rollout); 
   inline double bestScore(){ return _bestScore; }
 
+
+  /* Swap all data between parent and child Nrpm object (saves the
+   * trouble of copying all the data Beware, this is not a real "swap"
+   * after the call, the child object may be inconsistant state */
+  inline void swap(Nrpa *sub){
+    _bestScore = sub->_bestScore;
+    _bestRollout.swap(&sub->_bestRollout); 
+    _bestRolloutMoves.swap(sub->_bestRolloutMoves); 
+    _legalMoveCodes.swap(sub->_legalMoveCodes); 
+  }
 
   inline void printPolicy(std::ostream &os) const{
     _policy.print(os); 
@@ -138,9 +146,10 @@ double Nrpa<B,M,H,EQ>::run(){
 
       if (sub.bestScore() >= _bestScore) {
 	last = i;
-	_bestScore = sub.bestScore(); 
-	_bestRollout = sub._bestRollout;
-	_legalMoveCodes = sub._legalMoveCodes; 
+	// _bestScore = sub.bestScore(); 
+	// _bestRollout = sub._bestRollout;
+	// _legalMoveCodes = sub._legalMoveCodes; 
+	this->swap(&sub);
 	// TODO this copy is unecessary if we can update with the rollout of sub. There is not need to store the rollout in any nrpa object except the one of level 0. 
 	
 	if (_level > 2) {
