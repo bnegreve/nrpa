@@ -10,6 +10,7 @@
 #include <limits>
 #include "rollout.hpp"
 #include "movemap.hpp"
+#include "policy.hpp"
 
 /* Old constants kepts for compatibility with old game file. Their
  * values are set to old defaults, they have no effect on the nrpa
@@ -26,55 +27,6 @@ extern int startLearning;
 
 
 
-class Policy{
-
-public:
-
-  inline double prob(int code) const {
-    auto hit = _probs.find(code);
-    //    assert(hit != _probs.end()); 
-    if( hit != _probs.end() )
-      return hit->second;
-    else
-      return 0.;
-  }
-
-  inline void setProb(int code, double prob){
-    _probs[code] = prob; 
-  }
-
-  inline double updateProb(int code, double delta){
-    auto hit = _probs.find(code);
-    if(hit != _probs.end()){
-      hit->second += delta;
-      return hit->second;
-    }
-    else{
-      _probs[code] = delta;
-      return delta; 
-    }
-  }
-
-  inline void print(std::ostream &os) const{
-    os<<"Policy: "<<std::endl; 
-    for(auto it = _probs.begin(); it != _probs.end(); ++it){
-      os<<"\tCode : "<<it->first<<" prob: "<<it->second<<std::endl;
-    }
-    os<<"End of Policy"<<std::endl; 
-  }
-
-  template <typename X, typename Y, typename Z>
-  inline void print(std::ostream &os, const MoveMap<X,Y,Z> &movemap) const{
-    os<<"Policy: "<<std::endl; 
-    for(auto it = _probs.begin(); it != _probs.end(); ++it){
-      os<<"\tCode : "<<movemap.move(it->first).hash<<" prob: "<<it->second<<std::endl;
-    }
-    os<<"End of Policy"<<std::endl; 
-  }
-
-private: 
-  std::unordered_map<int, double> _probs; 
-};
 
 template <typename B, typename M,
 	  typename H = std::hash<M>,
