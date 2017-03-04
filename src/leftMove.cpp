@@ -81,7 +81,7 @@ int main(int argc, char *argv []) {
 
   Nrpa<Board, Move> nrpa(4);
 
-  nrpa.nrpa(); 
+  nrpa.run(); 
 
 
 
