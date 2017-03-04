@@ -42,7 +42,7 @@ public:
   double _bestScore; 
   Policy _policy; 
   Rollout _bestRollout; 
-  vector<M> _bestRolloutMoves; // TODO store moves 
+  vector<M> _bestRolloutMoves;  
 
   vector<vector<int>> _legalMoveCodes; // codes of every legal moves at step i
   B _bestBoard; 
@@ -228,11 +228,10 @@ double Nrpa<B, M, H, EQ>::playout () {
       s += moveProbs[j];
     }
 
-    M newMove = legalMoves[j]; // this copy is required because move.play is non const
-    int newMoveCode = _legalMoveCodes[step][j];
-
-    _bestRollout.addMove(newMoveCode); 
-    board.play(newMove); 
+    /* Store move, movecode, and actually play the move */
+    _bestRolloutMoves.push_back(legalMoves[j]); // this copy is required because move.play is non const
+    _bestRollout.addMove(_legalMoveCodes[step][j]); 
+    board.play(legalMoves[j]); 
   }
   return 0.0;  
 }
