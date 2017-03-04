@@ -87,14 +87,15 @@ public:
   static constexpr double ALPHA = 1.0; 
 
   int _level; 
+  double _bestScore; 
   Policy _policy; 
   Rollout _bestRollout; 
   
-  // vector<M> _bestRolloutMoves;
-  // vector<int> _bestRollout; // the codes of the moves of the best rollout
-  // vector<vector<int>> _legalMoves; // _legalMoves[i][j] is the code of
-				   // the legal move j at step i.
-  MoveMap<M, H, EQ> *_movemap; 
+  vector<M> _bestRolloutMoves;
+
+  vector<MoveMap<M, H, EQ>> _movemaps; //_movemaps[i] maps valid moves to code moves. There is one mapping for each step i in the rollout.
+
+  vector<vector<int>> _legalMoveCodes; // codes of every legal moves at step i
   B _bestBoard; 
 
 
@@ -105,19 +106,18 @@ public:
   double run(); 
   double playout ();
   void updatePolicy(const Rollout &rollout); 
-  inline double bestScore(){ return _bestRollout.score(); }
+  inline double bestScore(){ return _bestScore; }
 
 
-  inline void printPolicy(std::ostream &os, int level) const{
-    assert (level <= _startLevel);
+  inline void printPolicy(std::ostream &os) const{
     _policy.print(os); 
   }
   
 }; 
 
 template <typename B,typename  M,typename  H,typename EQ>
-Nrpa<B,M,H,EQ>::Nrpa(int level): _level(level){
-  _movemap = new MoveMap<M,H,EQ>(); 
+Nrpa<B,M,H,EQ>::Nrpa(int level): _level(level),
+				 _bestScore(std::numeric_limits<double>::lowest()){
 }
 
 template <typename B,typename  M,typename  H,typename EQ>
@@ -133,13 +133,15 @@ double Nrpa<B,M,H,EQ>::run(){
 
     for (int i = 0; i < N; i++) {
       Nrpa sub(_level - 1); 
-      sub._policy = _policy;
-      sub._movemap = _movemap; //TODO FIX
+      sub._policy = _policy; //TODO Pass as an argument to run
       sub.run();
 
-      if (sub.bestScore() >= _bestRollout.score()) {
+      if (sub.bestScore() >= _bestScore) {
 	last = i;
-	_bestRollout = sub._bestRollout; // TODO swap vector content to save a copy
+	_bestScore = sub.bestScore(); 
+	_bestRollout = sub._bestRollout;
+	_legalMoveCodes = sub._legalMoveCodes; 
+	// TODO this copy is unecessary if we can update with the rollout of sub. There is not need to store the rollout in any nrpa object except the one of level 0. 
 	
 	if (_level > 2) {
 	  for (int t = 0; t < _level - 1; t++)
@@ -156,12 +158,14 @@ double Nrpa<B,M,H,EQ>::run(){
       // if (stopOnTime && (indexTimeNRPA > nbTimesNRPA))
       //   return bestRollout.score();
     }
-    return _bestRollout.score();
+    return _bestScore;
   }
 }
 
 template <typename B,typename  M,typename  H,typename EQ>
 void Nrpa<B,M,H,EQ>::updatePolicy(const Rollout &rollout){
+
+  assert(rollout.length() <= _legalMoveCodes.size()); 
 
   Policy newPol = _policy; //TODO remove this useless copy!!
 
@@ -170,7 +174,7 @@ void Nrpa<B,M,H,EQ>::updatePolicy(const Rollout &rollout){
     newPol.updateProb(move, ALPHA); 
 
     double z = 0.; 
-    const std::vector<int> &legalMoves = rollout.legalMoves(step); 
+    const std::vector<int> &legalMoves = _legalMoveCodes[step]; 
     for(auto move = legalMoves.begin(); move != legalMoves.end(); ++move)
       z += exp (_policy.prob( *move ));
   
@@ -191,21 +195,22 @@ double Nrpa<B, M, H, EQ>::playout () {
 
   using namespace std; 
   assert(_bestRollout.length() == 0); 
-  
+
   B board; 
- 
+
+  _bestRollout.moves()->reserve(board.maxLegalMoves()); // reserve space to store rollout moves
+   
   while (true) {
+    int step = board.length; 
 
     if (board.terminal ()) {
 
       double score = board.score(); 
 
       _bestRollout.setScore(score);
-      std::vector<int> codes; 
+      _bestRollout.moves()->resize(board.length); // free up remaining space
+      _bestScore = board.score(); 
 
-      // TODO copy inside addAllMoves can be avoided by passing the poitner 
-      _movemap->codes(board.rollout, board.length, &codes);       
-      _bestRollout.setMoves(codes);  
 
       // if( score > _bestScoreNRPA ) {
       // 	_bestScoreNRPA = score; 
@@ -218,36 +223,38 @@ double Nrpa<B, M, H, EQ>::playout () {
 
     /* board is at a non terminal step ... */
 
-    int step = board.length; 
-      
 
-    /* Get all legal moves for this stage */ 
-
+    /* Get all legal moves for this step */ 
     vector<M> legalMoves(board.maxLegalMoves()); 
     int nbMoves = board.legalMoves(&legalMoves.front());
     legalMoves.resize(nbMoves); 
-    
-    /* Fetch the code for each legal moves, and store all legal move
-     * codes directly in the Rollout object */ 
 
-    vector<int> *legalMoveCodes = _bestRollout.legalMoveStorage(step, nbMoves); 
-    for(int i = 0; i < nbMoves; i++){
-      int code = _movemap->registerMove(legalMoves[i]);
-      (*legalMoveCodes)[i] = code; 
+    /* store legal move codes */
+    _legalMoveCodes.resize(step+1, vector<int>(nbMoves)); 
+    for(int i = 0; i < legalMoves.size(); i++){
+            static H hasher; 
+	    _legalMoveCodes[step][i] = hasher(legalMoves[i]);
+	    // #ifdef CHECK_COLLISION
+	    // 	    /* If each move has a unique code, this will never happen,
+	    // 	       but for games with a very large number of moves this
+	    // 	       may happen, in doubt, define CHECK_COLLISION to find
+	    // 	       out. */
+	    // 	    sort( _legalMoveCodes[i].begin(), _legalMoveCodes[i].end());
+	    // 	    assert(adjacent_find(_legalMoveCodes[i].begin(),
+	    // 				 _legalMoveCodes[i].end()) == _legalMoveCodes[i].end());
+	    // #endif 
     }
 
     /* Compute probs for each move (code) */ 
-
     vector<double> moveProbs(nbMoves); 
     double sum = 0; 
-
     for (int i = 0; i < nbMoves; i++) {
-      double prob = exp(_policy.prob( (*legalMoveCodes)[i] )); 
+      double prob = exp(_policy.prob( _legalMoveCodes[step][i] )); // TODO save exp computation
       moveProbs[i] = prob;
       sum += prob; 
     }
 
-    /* Pick a move randomly */
+    /* Pick a move randomly according to the policy distribution */
     double r = (rand () / (RAND_MAX + 1.0)) * sum;
     int j = 0;
     double s = moveProbs[0];
@@ -256,10 +263,11 @@ double Nrpa<B, M, H, EQ>::playout () {
       s += moveProbs[j];
     }
 
-    int newMoveCode = (*legalMoveCodes)[j];
-    M newMove = _movemap->move(newMoveCode); // this copy is required because
-                                            // move.play is non const
-    board.play(newMove);
+    M newMove = legalMoves[j]; // this copy is required because move.play is non const
+    int newMoveCode = _legalMoveCodes[step][j];
+
+    _bestRollout.addMove(newMoveCode); 
+    board.play(newMove); 
   }
   return 0.0;  
 }

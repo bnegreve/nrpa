@@ -46,6 +46,8 @@ public:
     this->swap(rolloutCodes); 
   }
 
+  inline std::vector<int> *moves() { return this; }
+
   inline void addAllMoves(int *rolloutCodes, int length){ this->resize(length); copy(rolloutCodes, rolloutCodes + length, this->begin()); }
 
   /* Store all legal move codes for step */
