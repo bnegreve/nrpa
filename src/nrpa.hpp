@@ -42,7 +42,6 @@ public:
   double _bestScore; 
   Policy _policy; 
   Rollout _bestRollout; 
-  
   vector<M> _bestRolloutMoves; // TODO store moves 
 
   vector<vector<int>> _legalMoveCodes; // codes of every legal moves at step i
@@ -69,6 +68,17 @@ public:
     _legalMoveCodes.swap(sub->_legalMoveCodes); 
   }
 
+  inline void reset(){
+    _bestScore = std::numeric_limits<double>::lowest(); 
+    _policy.reset(); 
+    _bestRollout.clear();
+    _bestRolloutMoves.clear(); 
+    _legalMoveCodes.clear(); 
+    _bestBoard = B(); 
+
+    
+  }
+
   inline void printPolicy(std::ostream &os) const{
     _policy.print(os); 
   }
@@ -91,18 +101,15 @@ double Nrpa<B,M,H,EQ>::run(){
 
     int last = 0;
 
+    Nrpa sub(_level - 1); 
     for (int i = 0; i < N; i++) {
-      Nrpa sub(_level - 1); 
+      sub.reset(); 
       sub._policy = _policy; //TODO Pass as an argument to run
       sub.run();
 
       if (sub.bestScore() >= _bestScore) {
 	last = i;
-	// _bestScore = sub.bestScore(); 
-	// _bestRollout = sub._bestRollout;
-	// _legalMoveCodes = sub._legalMoveCodes; 
-	this->swap(&sub);
-	// TODO this copy is unecessary if we can update with the rollout of sub. There is not need to store the rollout in any nrpa object except the one of level 0. 
+	this->swap(&sub); // move data of sub nrpa to parent nrpa (saves the copy)
 	
 	if (_level > 2) {
 	  for (int t = 0; t < _level - 1; t++)
@@ -115,9 +122,6 @@ double Nrpa<B,M,H,EQ>::run(){
       /* Update policy only a new best sequence is found. */ 
       updatePolicy(_bestRollout); 
 
-      // TODO : fix 
-      // if (stopOnTime && (indexTimeNRPA > nbTimesNRPA))
-      //   return bestRollout.score();
     }
     return _bestScore;
   }
@@ -169,7 +173,7 @@ double Nrpa<B, M, H, EQ>::playout () {
       double score = board.score(); 
 
       _bestRollout.setScore(score);
-      _bestRollout.moves()->resize(board.length); // free up remaining space
+      _bestRollout.moves()->resize(board.length); // free up overallocated space
       _bestScore = board.score(); 
 
 
