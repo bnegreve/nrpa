@@ -163,8 +163,6 @@ double Nrpa<B, M, H, EQ>::playout () {
 
   B board; 
 
-  _bestRollout.moves()->reserve(board.maxLegalMoves()); // reserve space to store rollout moves
-   
   while (true) {
     int step = board.length; 
 
