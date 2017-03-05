@@ -27,15 +27,34 @@ extern int startLearning;
 
 
 
+/* Pool (for NRPA objects) */
+template <typename T>
+struct Pool{
+  inline T *get(){
+    if(available.size() > 0){
+      T *back = available.back();
+      available.pop_back();
+      return back; 
+    }
+    else
+      return new T(); 
+  }
+
+  inline void release(T *t){
+    available.push_back(t); 
+  }
+  std::vector<T *> available; 
+};
+
 
 template <typename B, typename M,
 	  typename H = std::hash<M>,
 	  typename EQ = std::equal_to<M>>
-class Nrpa{
+  class Nrpa {
 
 public:
 
-  static const int N = 10; 
+  static const int N = 20; 
   static constexpr double ALPHA = 1.0; 
 
   int _level; 
@@ -52,6 +71,8 @@ public:
 
 public:
 
+
+  Nrpa();// Uninitialized copy
   Nrpa(int level, int maxLegalMoves, int maxPlayoutLength);
   double run(); 
   double playout ();
@@ -71,16 +92,22 @@ public:
     _legalMoveCodes.swap(sub->_legalMoveCodes); 
   }
 
-  inline void reset(){
+  inline void init(int level, int maxLegalMoves, int maxPlayoutLength){
+    _level = level;
+    _maxLegalMoves = maxLegalMoves;
+    _maxPlayoutLength = maxPlayoutLength; 
     _bestScore = std::numeric_limits<double>::lowest(); 
     _policy.reset(); 
-    _bestRollout.clear();
-    _bestRolloutMoves.clear(); 
+    _bestRollout.clear(); _bestRollout.reserve(maxPlayoutLength); 
+    _bestRolloutMoves.clear(); _bestRolloutMoves.reserve(maxLegalMoves); 
+    _legalMoveCodes.resize(maxPlayoutLength, std::vector<int>(0));
     for(auto lm = _legalMoveCodes.begin(); lm != _legalMoveCodes.end(); ++lm)
-      lm->clear(); 
-    //    _bestBoard = B(); 
+      lm->reserve(maxLegalMoves); 
+  }
 
-    
+  inline void reset(){
+    assert(_level != -1); 
+    init(_level, _maxLegalMoves, _maxPlayoutLength); 
   }
 
   inline void printPolicy(std::ostream &os) const{
@@ -89,21 +116,20 @@ public:
   
 }; 
 
+
+
 template <typename B,typename  M,typename  H,typename EQ>
-Nrpa<B,M,H,EQ>::Nrpa(int level, int maxLegalMoves, int maxPlayoutLength):
-  _level(level),
-  _maxLegalMoves(maxLegalMoves),
-  _maxPlayoutLength(maxPlayoutLength), 
-  _bestScore(std::numeric_limits<double>::lowest()){
-  
-  _legalMoveCodes.resize(maxPlayoutLength, std::vector<int>(0));
-  for(auto lm = _legalMoveCodes.begin(); lm != _legalMoveCodes.end(); ++lm)
-    lm->reserve(maxLegalMoves); 
-  }
+Nrpa<B,M,H,EQ>::Nrpa():_level(-1){}
+
+template <typename B,typename  M,typename  H,typename EQ>
+Nrpa<B,M,H,EQ>::Nrpa(int level, int maxLegalMoves, int maxPlayoutLength){
+  init(level, maxLegalMoves, maxPlayoutLength); 
+}
 
 template <typename B,typename  M,typename  H,typename EQ>
 double Nrpa<B,M,H,EQ>::run(){
   using namespace std; 
+  assert(_level != -1); 
 
   if (_level == 0) {
     return playout(); 
@@ -112,7 +138,11 @@ double Nrpa<B,M,H,EQ>::run(){
 
     int last = 0;
 
-    Nrpa sub(_level - 1, _maxLegalMoves, _maxPlayoutLength); 
+    static Pool<Nrpa<B,M,H,EQ>> pool; 
+    Nrpa *sub_ = pool.get();  // fetch an nrpa object from the pool (saves useless allocation)
+    Nrpa &sub = *sub_; 
+    sub.init(_level - 1, _maxLegalMoves, _maxPlayoutLength);
+
     for (int i = 0; i < N; i++) {
       sub.reset(); 
       sub._policy = _policy; //TODO Pass as an argument to run
@@ -134,6 +164,8 @@ double Nrpa<B,M,H,EQ>::run(){
       updatePolicy(_bestRollout); 
 
     }
+
+    pool.release(sub_); 
     return _bestScore;
   }
 }
