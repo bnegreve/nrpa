@@ -12,7 +12,7 @@
 using std::string;
 using std::vector; 
 
-class Rollout : vector<int> {
+class Rollout : public vector<int> {
 
   friend std::ostream &operator<<(std::ostream &, const Rollout &);
   friend std::istream &operator>>(std::istream &is, Rollout &r); 
