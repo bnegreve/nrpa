@@ -39,19 +39,20 @@ public:
   static constexpr double ALPHA = 1.0; 
 
   int _level; 
+  int _maxLegalMoves;
+  int _maxPlayoutLength; 
   double _bestScore; 
   Policy _policy; 
   Rollout _bestRollout; 
   vector<M> _bestRolloutMoves;  
-
   vector<vector<int>> _legalMoveCodes; // codes of every legal moves at step i
-  B _bestBoard; 
-
+  //B _bestBoard; 
+  
 
 
 public:
 
-  Nrpa(int level);
+  Nrpa(int level, int maxLegalMoves, int maxPlayoutLength);
   double run(); 
   double playout ();
   void updatePolicy(const Rollout &rollout); 
@@ -62,6 +63,8 @@ public:
    * trouble of copying all the data Beware, this is not a real "swap"
    * after the call, the child object may be inconsistant state */
   inline void swap(Nrpa *sub){
+    assert(_maxPlayoutLength == sub->_maxPlayoutLength); 
+    assert(_maxLegalMoves == sub->_maxLegalMoves); 
     _bestScore = sub->_bestScore;
     _bestRollout.swap(&sub->_bestRollout); 
     _bestRolloutMoves.swap(sub->_bestRolloutMoves); 
@@ -73,8 +76,9 @@ public:
     _policy.reset(); 
     _bestRollout.clear();
     _bestRolloutMoves.clear(); 
-    _legalMoveCodes.clear(); 
-    _bestBoard = B(); 
+    for(auto lm = _legalMoveCodes.begin(); lm != _legalMoveCodes.end(); ++lm)
+      lm->clear(); 
+    //    _bestBoard = B(); 
 
     
   }
@@ -86,9 +90,16 @@ public:
 }; 
 
 template <typename B,typename  M,typename  H,typename EQ>
-Nrpa<B,M,H,EQ>::Nrpa(int level): _level(level),
-				 _bestScore(std::numeric_limits<double>::lowest()){
-}
+Nrpa<B,M,H,EQ>::Nrpa(int level, int maxLegalMoves, int maxPlayoutLength):
+  _level(level),
+  _maxLegalMoves(maxLegalMoves),
+  _maxPlayoutLength(maxPlayoutLength), 
+  _bestScore(std::numeric_limits<double>::lowest()){
+  
+  _legalMoveCodes.resize(maxPlayoutLength, std::vector<int>(0));
+  for(auto lm = _legalMoveCodes.begin(); lm != _legalMoveCodes.end(); ++lm)
+    lm->reserve(maxLegalMoves); 
+  }
 
 template <typename B,typename  M,typename  H,typename EQ>
 double Nrpa<B,M,H,EQ>::run(){
@@ -101,7 +112,7 @@ double Nrpa<B,M,H,EQ>::run(){
 
     int last = 0;
 
-    Nrpa sub(_level - 1); 
+    Nrpa sub(_level - 1, _maxLegalMoves, _maxPlayoutLength); 
     for (int i = 0; i < N; i++) {
       sub.reset(); 
       sub._policy = _policy; //TODO Pass as an argument to run
@@ -130,7 +141,7 @@ double Nrpa<B,M,H,EQ>::run(){
 template <typename B,typename  M,typename  H,typename EQ>
 void Nrpa<B,M,H,EQ>::updatePolicy(const Rollout &rollout){
 
-  assert(rollout.length() <= _legalMoveCodes.size()); 
+  //  assert(rollout.length() <= _legalMoveCodes.size()); 
 
   Policy newPol = _policy; //TODO remove this useless copy!!
 
@@ -193,7 +204,7 @@ double Nrpa<B, M, H, EQ>::playout () {
     legalMoves.resize(nbMoves); 
 
     /* store legal move codes */
-    _legalMoveCodes.resize(step+1, vector<int>(nbMoves)); 
+    _legalMoveCodes[step].resize(nbMoves); 
     for(int i = 0; i < legalMoves.size(); i++){
             static H hasher; 
 	    _legalMoveCodes[step][i] = hasher(legalMoves[i]);
