@@ -47,14 +47,12 @@ struct Pool{
 };
 
 
-template <typename B, typename M,
-	  typename H = std::hash<M>,
-	  typename EQ = std::equal_to<M>>
-  class Nrpa {
+template <typename B, typename M>
+class Nrpa {
 
 public:
 
-  static const int N = 20; 
+  static const int N = 10; 
   static constexpr double ALPHA = 1.0; 
 
   int _level; 
@@ -118,16 +116,16 @@ public:
 
 
 
-template <typename B,typename  M,typename  H,typename EQ>
-Nrpa<B,M,H,EQ>::Nrpa():_level(-1){}
+template <typename B,typename  M>
+Nrpa<B,M>::Nrpa():_level(-1){}
 
-template <typename B,typename  M,typename  H,typename EQ>
-Nrpa<B,M,H,EQ>::Nrpa(int level, int maxLegalMoves, int maxPlayoutLength){
+template <typename B,typename  M>
+Nrpa<B,M>::Nrpa(int level, int maxLegalMoves, int maxPlayoutLength){
   init(level, maxLegalMoves, maxPlayoutLength); 
 }
 
-template <typename B,typename  M,typename  H,typename EQ>
-double Nrpa<B,M,H,EQ>::run(){
+template <typename B,typename  M>
+double Nrpa<B,M>::run(){
   using namespace std; 
   assert(_level != -1); 
 
@@ -138,7 +136,7 @@ double Nrpa<B,M,H,EQ>::run(){
 
     int last = 0;
 
-    static Pool<Nrpa<B,M,H,EQ>> pool; 
+    static Pool<Nrpa<B,M>> pool; 
     Nrpa *sub_ = pool.get();  // fetch an nrpa object from the pool (saves useless allocation)
     Nrpa &sub = *sub_; 
     sub.init(_level - 1, _maxLegalMoves, _maxPlayoutLength);
@@ -170,8 +168,8 @@ double Nrpa<B,M,H,EQ>::run(){
   }
 }
 
-template <typename B,typename  M,typename  H,typename EQ>
-void Nrpa<B,M,H,EQ>::updatePolicy(const Rollout &rollout){
+template <typename B,typename M>
+void Nrpa<B,M>::updatePolicy(const Rollout &rollout){
 
   //  assert(rollout.length() <= _legalMoveCodes.size()); 
 
@@ -198,8 +196,8 @@ void Nrpa<B,M,H,EQ>::updatePolicy(const Rollout &rollout){
 /* This code contains number of copies which are required to work with
  * standard Board class, so beware before optimizing.  */ 
 
-template <typename B,typename  M,typename  H,typename EQ>
-double Nrpa<B, M, H, EQ>::playout () {
+template <typename B,typename  M>
+double Nrpa<B,M>::playout () {
 
   using namespace std; 
   assert(_bestRollout.length() == 0); 
@@ -238,8 +236,7 @@ double Nrpa<B, M, H, EQ>::playout () {
     /* store legal move codes */
     _legalMoveCodes[step].resize(nbMoves); 
     for(int i = 0; i < legalMoves.size(); i++){
-            static H hasher; 
-	    _legalMoveCodes[step][i] = hasher(legalMoves[i]);
+      _legalMoveCodes[step][i] = board.code(legalMoves[i]);
 	    // #ifdef CHECK_COLLISION
 	    // 	    /* If each move has a unique code, this will never happen,
 	    // 	       but for games with a very large number of moves this

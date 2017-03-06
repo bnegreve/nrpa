@@ -836,60 +836,7 @@ int main(int argc, char *argv []) {
   levelPrint = 4;
   saveHighScore = true;
 
-  struct moveHasher{
-    int operator()(const Move &m){
-      return m.hash; 
-    }
-  }; 
-
-  /* IMPORTANT NOTE about the eq operator:
-     If I understand correctly, hash collisions are ignored in this game. 
-     (i.e. it is assumed that no two moves can have the same hash value). 
-
-     In addition, the location array in the Move object is not always ordered in the same
-     way, which lead to incorrect comparison results when comparing two identical moves
-     (with a different order).
-
-     The proper way to fix this problem would be to keep locations ordered at all time.
-     However, this is costly and will lead to unfair benchmarking with previous version.
-     
-     So I stick to compare hash only for now. 
-  */
-  struct moveEq{
-    bool operator()(const Move &m1, const Move &m2){
-      if (m1.hash == m2.hash){
-	if(m1.nbLocations == m2.nbLocations)
-	  if(m1.color == m2.color){ // TODO is it necessary to compare  color, what about penalty
-	    //TODO would be better if we could always have locations
-	    //sorted, but it's complicated. However, this should not happen too often
-	    // same hash and same number of locations is unlikely
-	    
-	    // TODO should we check colors as well? 
-
-	    Move m1c = m1; 
-	    Move m2c = m2;
-	    m1c.sort();
-	    m2c.sort(); 
-
-	    /* compare sorted locations */ 
-	    if(m1c.nbLocations != m2c.nbLocations) return false;
-	    const int *m1end = m1c.locations + m1c.nbLocations; 
-	    const int *m1p = m1c.locations; 
-	    const int *m2p = m2c.locations; 
-	    while(m1p < m1end){
-	      if(*m1p != *m2p)
-		return false;
-	      m1p++; m2p++;
-	    }
-	    return true; 
-	  }
-      }
-      return false; 
-    }
-  }; 
-
-
-  Nrpa<Board, Move, moveHasher, moveEq> nrpa(4, MaxLegalMoves, MaxPlayoutLength); 
+  Nrpa<Board, Move> nrpa(4, MaxLegalMoves, MaxPlayoutLength); 
   nrpa.run(); 
 
   exit (0);
