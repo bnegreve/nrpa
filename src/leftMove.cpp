@@ -79,8 +79,7 @@ class Board {
 
 int main(int argc, char *argv []) {
 
-  Nrpa<Board, Move> nrpa(4);
-
+  Nrpa<Board, Move> nrpa(4, MaxLegalMoves, MaxPlayoutLength); 
   nrpa.run(); 
 
 
