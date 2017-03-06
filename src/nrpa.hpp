@@ -43,9 +43,9 @@ struct Pool{
   inline void release(T *t){
     available.push_back(t); 
   }
-  std::vector<T *> available; 
+  std::vector<T *> available;
+  int numactive = 0; 
 };
-
 
 template <typename B, typename M>
 class Nrpa {
@@ -74,7 +74,7 @@ public:
   Nrpa(int level, int maxLegalMoves, int maxPlayoutLength);
   double run(); 
   double playout ();
-  void updatePolicy(const Rollout &rollout); 
+  void updatePolicy(); 
   inline double bestScore(){ return _bestScore; }
 
 
@@ -159,7 +159,7 @@ double Nrpa<B,M>::run(){
       }
 
       /* Update policy only a new best sequence is found. */ 
-      updatePolicy(_bestRollout); 
+      updatePolicy(); 
 
     }
 
@@ -169,15 +169,21 @@ double Nrpa<B,M>::run(){
 }
 
 template <typename B,typename M>
-void Nrpa<B,M>::updatePolicy(const Rollout &rollout){
+void Nrpa<B,M>::updatePolicy(){
 
   //  assert(rollout.length() <= _legalMoveCodes.size()); 
 
   static Policy newPol;
   newPol = _policy; //TODO remove this useless copy!!
 
-  for(int step = 0; step < rollout.length(); step++){
-    int move = rollout.move(step); 
+  // for(int i = 0; i < _bestRollout.length(); i++)
+  //   for(int j = 0; j < _legalMoveCodes[i].size(); j++)
+  //     newPol.setProb(_legalMoveCodes[i][j], _policy.prob(_legalMoveCodes[i][j])); 
+
+
+
+  for(int step = 0; step < _bestRollout.length(); step++){
+    int move = _bestRollout.move(step); 
     newPol.updateProb(move, ALPHA); 
 
     double z = 0.; 
@@ -190,7 +196,12 @@ void Nrpa<B,M>::updatePolicy(const Rollout &rollout){
     }
   }
 
+  // for(int i = 0; i < _bestRollout.length(); i++)
+  //   for(int j = 0; j < _legalMoveCodes[i].size(); j++)
+  //     _policy.setProb(_legalMoveCodes[i][j], newPol.prob(_legalMoveCodes[i][j])); 
+
   _policy = newPol; 
+
 }
 
   
@@ -270,7 +281,7 @@ double Nrpa<B,M>::playout () {
     }
 
     /* Store move, movecode, and actually play the move */
-    _bestRolloutMoves.push_back(legalMoves[j]); // this copy is required because move.play is non const
+    //    _bestRolloutMoves.push_back(legalMoves[j]); // this copy is required because move.play is non const
     _bestRollout.addMove(_legalMoveCodes[step][j]); 
     board.play(legalMoves[j]); 
   }
