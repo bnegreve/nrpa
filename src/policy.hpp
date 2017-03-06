@@ -22,15 +22,16 @@ public:
   }
 
   inline double updateProb(int code, double delta){
-    auto hit = _probs.find(code);
-    if(hit != _probs.end()){
-      hit->second += delta;
-      return hit->second;
-    }
-    else{
-      _probs[code] = delta;
-      return delta; 
-    }
+    _probs[code] += delta; 
+    // auto hit = _probs.find(code);
+    // if(hit != _probs.end()){
+    //   hit->second += delta;
+    //   return hit->second;
+    // }
+    // else{
+    //   _probs[code] = delta;
+    //   return delta; 
+    // }
   }
 
   inline void print(std::ostream &os) const{

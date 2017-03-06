@@ -173,7 +173,8 @@ void Nrpa<B,M>::updatePolicy(const Rollout &rollout){
 
   //  assert(rollout.length() <= _legalMoveCodes.size()); 
 
-  Policy newPol = _policy; //TODO remove this useless copy!!
+  static Policy newPol;
+  newPol = _policy; //TODO remove this useless copy!!
 
   for(int step = 0; step < rollout.length(); step++){
     int move = rollout.move(step); 
@@ -229,7 +230,8 @@ double Nrpa<B,M>::playout () {
 
 
     /* Get all legal moves for this step */ 
-    vector<M> legalMoves(board.maxLegalMoves()); 
+    static vector<M> legalMoves(board.maxLegalMoves()); 
+    legalMoves.resize(board.maxLegalMoves());
     int nbMoves = board.legalMoves(&legalMoves.front());
     legalMoves.resize(nbMoves); 
 
@@ -249,7 +251,8 @@ double Nrpa<B,M>::playout () {
     }
 
     /* Compute probs for each move (code) */ 
-    vector<double> moveProbs(nbMoves); 
+    static vector<double> moveProbs(nbMoves); 
+    moveProbs.resize(nbMoves); 
     double sum = 0; 
     for (int i = 0; i < nbMoves; i++) {
       double prob = exp(_policy.prob( _legalMoveCodes[step][i] )); // TODO save exp computation
