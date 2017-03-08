@@ -56,7 +56,7 @@ public:
     std::vector<int>::swap(*other); 
   }
 
-  inline void clear(){
+  inline void reset(){
     _score = std::numeric_limits<double>::lowest();
     std::vector<int>::clear(); 
   }

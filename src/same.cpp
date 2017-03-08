@@ -836,7 +836,7 @@ int main(int argc, char *argv []) {
   levelPrint = 4;
   saveHighScore = true;
 
-  Nrpa<Board, Move> nrpa(4, MaxLegalMoves, MaxPlayoutLength); 
+  Nrpa<Board, Move, 5, MaxPlayoutLength, MaxLegalMoves> nrpa; 
   nrpa.run(); 
 
   exit (0);

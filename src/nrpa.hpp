@@ -47,7 +47,7 @@ struct Pool{
   int numactive = 0; 
 };
 
-template <typename B, typename M>
+template <typename B, typename M, int L, int PL, int LM>
 class Nrpa {
 
 public:
@@ -55,152 +55,123 @@ public:
   static const int N = 10; 
   static constexpr double ALPHA = 1.0; 
 
-  int _level; 
-  int _maxLegalMoves;
-  int _maxPlayoutLength; 
   double _bestScore; 
-  Policy _policy; 
-  Rollout _bestRollout; 
-  vector<M> _bestRolloutMoves;  
-  vector<vector<int>> _legalMoveCodes; // codes of every legal moves at step i
+  Policy _policy[L]; 
+  Rollout _bestRollout[L]; 
+  vector<M> _bestRolloutMoves[L];  
+  int _legalMoveCodes[L][PL][LM]; // codes of every legal moves at step i
+  int _legalMoveCodeLen[L][PL]; 
   //B _bestBoard; 
   
 
 
 public:
 
-
-  Nrpa();// Uninitialized copy
-  Nrpa(int level, int maxLegalMoves, int maxPlayoutLength);
-  double run(); 
-  double playout ();
-  void updatePolicy(); 
+  double run(int level = 4); 
+  double run(int level, Policy *policy); 
+  double playout (const Policy &policy);
+  void updatePolicy(int level, Policy *policy); 
   inline double bestScore(){ return _bestScore; }
-
-
-  /* Swap all data between parent and child Nrpm object (saves the
-   * trouble of copying all the data Beware, this is not a real "swap"
-   * after the call, the child object may be inconsistant state */
-  inline void swap(Nrpa *sub){
-    assert(_maxPlayoutLength == sub->_maxPlayoutLength); 
-    assert(_maxLegalMoves == sub->_maxLegalMoves); 
-    _bestScore = sub->_bestScore;
-    _bestRollout.swap(&sub->_bestRollout); 
-    _bestRolloutMoves.swap(sub->_bestRolloutMoves); 
-    _legalMoveCodes.swap(sub->_legalMoveCodes); 
-  }
-
-  inline void init(int level, int maxLegalMoves, int maxPlayoutLength){
-    _level = level;
-    _maxLegalMoves = maxLegalMoves;
-    _maxPlayoutLength = maxPlayoutLength; 
-    _bestScore = std::numeric_limits<double>::lowest(); 
-    _policy.reset(); 
-    _bestRollout.clear(); _bestRollout.reserve(maxPlayoutLength); 
-    _bestRolloutMoves.clear(); _bestRolloutMoves.reserve(maxLegalMoves); 
-    _legalMoveCodes.resize(maxPlayoutLength, std::vector<int>(0));
-    for(auto lm = _legalMoveCodes.begin(); lm != _legalMoveCodes.end(); ++lm)
-      lm->reserve(maxLegalMoves); 
-  }
-
-  inline void reset(){
-    assert(_level != -1); 
-    init(_level, _maxLegalMoves, _maxPlayoutLength); 
-  }
-
-  inline void printPolicy(std::ostream &os) const{
-    _policy.print(os); 
-  }
   
 }; 
 
-
-
-template <typename B,typename  M>
-Nrpa<B,M>::Nrpa():_level(-1){}
-
-template <typename B,typename  M>
-Nrpa<B,M>::Nrpa(int level, int maxLegalMoves, int maxPlayoutLength){
-  init(level, maxLegalMoves, maxPlayoutLength); 
+template <typename B,typename  M, int L, int PL, int LM>
+double Nrpa<B,M,L,PL,LM>::run(int level){
+  Policy policy; 
+  return run(level, &policy); 
 }
 
-template <typename B,typename  M>
-double Nrpa<B,M>::run(){
+template <typename B,typename  M, int L, int PL, int LM>
+double Nrpa<B,M,L,PL,LM>::run(int level, Policy *policy){
   using namespace std; 
-  assert(_level != -1); 
+  assert(level < L); 
 
-  if (_level == 0) {
-    return playout(); 
+  if (level == 0) {
+    return playout(*policy); 
   }
   else {
 
-    int last = 0;
-
-    static Pool<Nrpa<B,M>> pool; 
-    Nrpa *sub_ = pool.get();  // fetch an nrpa object from the pool (saves useless allocation)
-    Nrpa &sub = *sub_; 
-    sub.init(_level - 1, _maxLegalMoves, _maxPlayoutLength);
+    _bestRollout[level].reset(); 
+    _policy[level] = *policy; 
 
     for (int i = 0; i < N; i++) {
-      sub.reset(); 
-      sub._policy = _policy; //TODO Pass as an argument to run
-      sub.run();
+      double score = run(level - 1, &_policy[level]); 
 
-      if (sub.bestScore() >= _bestScore) {
-	last = i;
-	this->swap(&sub); // move data of sub nrpa to parent nrpa (saves the copy)
-	
-	if (_level > 2) {
-	  for (int t = 0; t < _level - 1; t++)
-	    fprintf (stderr, "\t");
-	  fprintf(stderr,"Level : %d, N:%d, score : %f\n", _level, i, _bestRollout.score());
+      if (score >= _bestRollout[level].score()) {
+	int length = _bestRollout[level - 1].length(); 
+	_bestRollout[level] = _bestRollout[level - 1];
+	copy(_legalMoveCodeLen[level - 1], _legalMoveCodeLen[level - 1] + length, _legalMoveCodeLen[level]);
+
+	for(int step = 0; step < length; step++){
+
+	  copy(_legalMoveCodes[level - 1][step],
+	       _legalMoveCodes[level - 1][step] + _legalMoveCodeLen[level - 1][step],
+	       _legalMoveCodes[level][step]);
 	}
 
+      
+	
+	if (level > 2) {
+	  for (int t = 0; t < level - 1; t++)
+	    fprintf (stderr, "\t");
+	  fprintf(stderr,"Level : %d, N:%d, score : %f\n", level, i, _bestRollout[level].score());
+	}
       }
 
       /* Update policy only a new best sequence is found. */ 
-      updatePolicy(); 
+      updatePolicy(level, &_policy[level]); 
 
     }
-
-    pool.release(sub_); 
-    return _bestScore;
+    return _bestRollout[level].score(); 
   }
 }
 
-template <typename B,typename M>
-void Nrpa<B,M>::updatePolicy(){
+template <typename B,typename M, int L, int PL, int LM>
+void Nrpa<B,M,L,PL,LM>::updatePolicy(int level, Policy *policy){
 
   //  assert(rollout.length() <= _legalMoveCodes.size()); 
+  using namespace std; 
 
   static Policy newPol;
-  newPol = _policy; //TODO remove this useless copy!!
-
-  // for(int i = 0; i < _bestRollout.length(); i++)
-  //   for(int j = 0; j < _legalMoveCodes[i].size(); j++)
-  //     newPol.setProb(_legalMoveCodes[i][j], _policy.prob(_legalMoveCodes[i][j])); 
+  newPol = *policy; //TODO remove this useless copy!!
 
 
+  int length = _bestRollout[level].length(); 
 
-  for(int step = 0; step < _bestRollout.length(); step++){
-    int move = _bestRollout.move(step); 
-    newPol.updateProb(move, ALPHA); 
+  for(int step = 0; step < length; step++){
+    int code = _bestRollout[level].move(step); 
+    newPol.setProb(code, newPol.prob(code) + ALPHA);
 
     double z = 0.; 
-    const std::vector<int> &legalMoves = _legalMoveCodes[step]; 
-    for(auto move = legalMoves.begin(); move != legalMoves.end(); ++move)
-      z += exp (_policy.prob( *move ));
-  
-    for(auto move = legalMoves.begin(); move != legalMoves.end(); ++move){
-      newPol.updateProb( *move, - ALPHA * (exp (_policy.prob( *move )) / z ));
-    }
-  }
+    for(int i = 0; i < _legalMoveCodeLen[level][step]; i++)
+      z += exp (policy->prob( _legalMoveCodes[level][step][i] ));
+    // cout<<"LEGAL MOVE LEN "<<_legalMoveCodeLen[level][step]<<" "<<level<<endl;
+    // for(int i = 0; i < _legalMoveCodeLen[level][step]; i++){
+    //   cout<<_legalMoveCodes[level][step][i]<<" "; 
+    // }
+    // cout<<endl;
 
+    for(int i = 0; i < _legalMoveCodeLen[level][step]; i++){
+      int move = _legalMoveCodes[level][step][i]; 
+      newPol.setProb(move, newPol.prob(move) - ALPHA * exp (policy->prob(move)) / z );
+    }
+    
+    //    newPol.print(std::cout);
+    //    exit(1); 
+
+
+
+  }
   // for(int i = 0; i < _bestRollout.length(); i++)
   //   for(int j = 0; j < _legalMoveCodes[i].size(); j++)
   //     _policy.setProb(_legalMoveCodes[i][j], newPol.prob(_legalMoveCodes[i][j])); 
 
-  _policy = newPol; 
+  *policy = newPol; 
+
+  // cout<<"POLICY "<<endl;
+  // policy->print(cout);
+  //  exit(1); 
+
 
 }
 
@@ -208,68 +179,44 @@ void Nrpa<B,M>::updatePolicy(){
 /* This code contains number of copies which are required to work with
  * standard Board class, so beware before optimizing.  */ 
 
-template <typename B,typename  M>
-double Nrpa<B,M>::playout () {
+template <typename B,typename  M, int L, int PL, int LM>
+double Nrpa<B,M,L,PL,LM>::playout (const Policy &policy) {
+
+  _bestRollout[0].clear(); 
 
   using namespace std; 
-  assert(_bestRollout.length() == 0); 
 
   B board; 
 
   while (true) {
-    int step = board.length; 
 
     if (board.terminal ()) {
-
       double score = board.score(); 
-
-      _bestRollout.setScore(score);
-      _bestRollout.moves()->resize(board.length); // free up overallocated space
-      _bestScore = board.score(); 
-
-
-      // if( score > _bestScoreNRPA ) {
-      // 	_bestScoreNRPA = score; 
-      // 	_bestBoard = board;
-      // 	board.print (stderr);
-      // }
-	
+      _bestRollout[0].setScore(score);
       return score; 
     }
 
-    /* board is at a non terminal step ... */
-
+    /* board is at a non terminal step, make a new move ... */
+    int step = board.length; 
 
     /* Get all legal moves for this step */ 
-    static vector<M> legalMoves(board.maxLegalMoves()); 
-    legalMoves.resize(board.maxLegalMoves());
-    int nbMoves = board.legalMoves(&legalMoves.front());
-    legalMoves.resize(nbMoves); 
+    M moves [LM];
+    int nbMoves = board.legalMoves (moves);
+    _legalMoveCodeLen[0][step] = nbMoves; 
 
-    /* store legal move codes */
-    _legalMoveCodes[step].resize(nbMoves); 
-    for(int i = 0; i < legalMoves.size(); i++){
-      _legalMoveCodes[step][i] = board.code(legalMoves[i]);
-	    // #ifdef CHECK_COLLISION
-	    // 	    /* If each move has a unique code, this will never happen,
-	    // 	       but for games with a very large number of moves this
-	    // 	       may happen, in doubt, define CHECK_COLLISION to find
-	    // 	       out. */
-	    // 	    sort( _legalMoveCodes[i].begin(), _legalMoveCodes[i].end());
-	    // 	    assert(adjacent_find(_legalMoveCodes[i].begin(),
-	    // 				 _legalMoveCodes[i].end()) == _legalMoveCodes[i].end());
-	    // #endif 
-    }
+    double moveProbs [LM];
 
-    /* Compute probs for each move (code) */ 
-    static vector<double> moveProbs(nbMoves); 
-    moveProbs.resize(nbMoves); 
-    double sum = 0; 
     for (int i = 0; i < nbMoves; i++) {
-      double prob = exp(_policy.prob( _legalMoveCodes[step][i] )); // TODO save exp computation
-      moveProbs[i] = prob;
-      sum += prob; 
+      int c = board.code (moves [i]);
+      moveProbs [i] = exp (policy.prob(c));
+      _legalMoveCodes[0][step][i] = c;
     }
+
+    double sum = moveProbs[0]; 
+    for (int i = 1; i < nbMoves; i++) {
+      sum += moveProbs[i]; 
+    }
+
 
     /* Pick a move randomly according to the policy distribution */
     double r = (rand () / (RAND_MAX + 1.0)) * sum;
@@ -281,9 +228,9 @@ double Nrpa<B,M>::playout () {
     }
 
     /* Store move, movecode, and actually play the move */
-    //    _bestRolloutMoves.push_back(legalMoves[j]); // this copy is required because move.play is non const
-    _bestRollout.addMove(_legalMoveCodes[step][j]); 
-    board.play(legalMoves[j]); 
+    assert(step == _bestRollout[0].size()); 
+    _bestRollout[0].addMove(_legalMoveCodes[0][step][j]); 
+    board.play(moves[j]); 
   }
   return 0.0;  
 }
