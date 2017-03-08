@@ -182,7 +182,7 @@ void Nrpa<B,M,L,PL,LM>::updatePolicy(int level, Policy *policy){
 template <typename B,typename  M, int L, int PL, int LM>
 double Nrpa<B,M,L,PL,LM>::playout (const Policy &policy) {
 
-  _bestRollout[0].clear(); 
+  _bestRollout[0].reset(); 
 
   using namespace std; 
 
@@ -228,7 +228,7 @@ double Nrpa<B,M,L,PL,LM>::playout (const Policy &policy) {
     }
 
     /* Store move, movecode, and actually play the move */
-    assert(step == _bestRollout[0].size()); 
+    assert(step == _bestRollout[0].length()); 
     _bestRollout[0].addMove(_legalMoveCodes[0][step][j]); 
     board.play(moves[j]); 
   }
