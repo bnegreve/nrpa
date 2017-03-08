@@ -4,6 +4,9 @@
 
 #ifndef POLICY_HPP
 
+const int SizeTablePolicy = 65535;
+
+#if 1
 class Policy{
 
 public:
@@ -59,6 +62,76 @@ public:
 private: 
   std::unordered_map<int, double> _probs; 
 };
+#else
+
+class ProbabilityCode {
+ public:
+  int code;
+  double proba;
+};
+
+
+class Policy {
+ public:
+  std::vector<ProbabilityCode> table [SizeTablePolicy + 1];
+
+  void print(std::ostream &os) const {
+    os<<"Policy "<<std::endl;
+    for(int i = 0; i < SizeTablePolicy; i++)
+      for(int j = 0; j < table[i].size(); j++)
+	os<<table[i][j].code<<" : "<<table[i][j].proba<<std::endl;
+  }
+
+
+  void setProb (int code, double proba) {
+    int index = code & SizeTablePolicy;
+    for (int i = 0; i < table [index].size (); i++) {
+      if (table [index] [i].code == code) {
+	table [index] [i].proba = proba;
+	return;
+      }
+    }
+    ProbabilityCode p;
+    p.code = code;
+    p.proba = proba;
+    table [index].push_back (p);
+  }
+
+  void updateProb(int code, double delta){
+    int index = code & SizeTablePolicy;
+    for (int i = 0; i < table [index].size (); i++) {
+      if (table [index] [i].code == code) {
+	table [index] [i].proba += delta;
+	return;
+      }
+    }
+    ProbabilityCode p;
+    p.code = code;
+    p.proba = delta;
+    table [index].push_back (p);
+  }
+
+  double prob (int code) {
+    int index = code & SizeTablePolicy;
+    for (int i = 0; i < table [index].size (); i++)
+      if (table [index] [i].code == code) {
+	return table [index] [i].proba;
+      }
+    //return minNorm + (maxNorm - minNorm) * policyAMAF.get (code);
+    return 0.0;
+  }
+  
+  void reset(){
+    for(int i = 0; i < SizeTablePolicy; i++){
+      table[i].clear(); 
+    }
+  }
+
+
+};
+
+#endif 
+
 
 #endif 
 
