@@ -26,27 +26,6 @@ extern int levelPrint;
 extern int startLearning;
 
 
-
-/* Pool (for NRPA objects) */
-template <typename T>
-struct Pool{
-  inline T *get(){
-    if(available.size() > 0){
-      T *back = available.back();
-      available.pop_back();
-      return back; 
-    }
-    else
-      return new T(); 
-  }
-
-  inline void release(T *t){
-    available.push_back(t); 
-  }
-  std::vector<T *> available;
-  int numactive = 0; 
-};
-
 template <typename B, typename M, int L, int PL, int LM>
 class Nrpa {
 
@@ -57,7 +36,7 @@ public:
 
   double _bestScore; 
   Policy _policy[L]; 
-  Rollout _bestRollout[L]; 
+  Rollout<PL> _bestRollout[L]; 
   vector<M> _bestRolloutMoves[L];  
   int _legalMoveCodes[L][PL][LM]; // codes of every legal moves at step i
   int _legalMoveCodeLen[L][PL]; 

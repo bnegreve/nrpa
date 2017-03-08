@@ -1,4 +1,4 @@
-// rollout.cpp
+// rollout.inl
 // Made by Benjamin Negrevergne 
 // Started on <2017-02-22 Wed>
 
@@ -8,21 +8,21 @@
 #include <iostream>
 #include <fstream>
 #include <limits>
-#include "rollout.hpp"
 
-using namespace std; 
+using namespace std; //TODO remove 
 
-
-
-Rollout::Rollout(int level):_level(level), _score(numeric_limits<double>::lowest()){}
+template <int PL>
+Rollout<PL>::Rollout(int level):_level(level), _score(numeric_limits<double>::lowest()){}
 
 /* Create a rollout object from rollout data */ 
-Rollout::Rollout(int *rolloutData, int length, int level, double score): _nbMoves(length), _level(level), _score(score){
+template <int PL>
+Rollout<PL>::Rollout(int *rolloutData, int length, int level, double score): _length(length), _level(level), _score(score){
 addAllMoves(rolloutData, length); 
 }
 
 /* store rollout into filename */
-void Rollout::store(const string &filename, const string &lockfile) const{
+template <int PL>
+void Rollout<PL>::store(const string &filename, const string &lockfile) const{
   int fd = open(lockfile.c_str(), O_CREAT); 
   flock(fd, LOCK_SH); 
   std::fstream fs;
@@ -34,7 +34,8 @@ void Rollout::store(const string &filename, const string &lockfile) const{
 }    
 
 /* load rollout from file*/
-void Rollout::load(const string &filename, const string &lockfile){
+template <int PL>
+void Rollout<PL>::load(const string &filename, const string &lockfile){
   int fd = open(lockfile.c_str(), O_CREAT); 
   flock(fd, LOCK_SH); 
   std::fstream fs;
@@ -45,8 +46,9 @@ void Rollout::load(const string &filename, const string &lockfile){
   close(fd); 
 }
 
-void Rollout::compareAndSwap(const string &filename, const string &lockfile){
-  // Rollout best;
+template <int PL>
+void Rollout<PL>::compareAndSwap(const string &filename, const string &lockfile){
+  // Rollout<PL>best;
   // best.load(filename, lockfile);
   // if(_score > best._score || best.size() == 0){
   //   //	    cout<<best.size() << " " <<best._level <<" " <<_level<<endl; 
@@ -57,18 +59,19 @@ void Rollout::compareAndSwap(const string &filename, const string &lockfile){
   //   *this = best;
 }
 
-
-ostream &operator<<(ostream &os, const Rollout &r){
+template <int PL>
+ostream &operator<<(ostream &os, const Rollout<PL> &r){
   os<<r.length()<<" "; 
   os<<r._level<<" "; 
   os<<r._score<<" "; 
-  for(int i = 0; i < r._nbMoves; i++)
+  for(int i = 0; i < r._length; i++)
     os<<r._moves[i]<<" "; 
   //  if(r.length() > 0) os<<r.back();
   return os; 
 }
 
-istream &operator>>(istream &is, Rollout &r){
+template <int PL>
+istream &operator>>(istream &is, Rollout<PL> &r){
   int length;
   is>>std::skipws; 
   is>>length;
@@ -80,7 +83,7 @@ istream &operator>>(istream &is, Rollout &r){
   }
   if(is.eof()){
     cerr<<"Warning, cannot read Rollout from file"<<endl;
-    r = Rollout(); 
+    r = Rollout<PL>(); 
   }
 }
 

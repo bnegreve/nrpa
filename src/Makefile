@@ -4,7 +4,7 @@ CXXFLAGS=-O3 -g -DNDEBUG
 #CXXFLAGS=-O0 --no-inline  -g
 
 
-OBJS=rollout.o nrpa.o movemap.o
+OBJS= nrpa.o movemap.o
 
 %.o: %.cpp %.hpp
 	$(CXX) $(CXXFLAGS) -o $@ -c $< 
