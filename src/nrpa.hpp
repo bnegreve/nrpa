@@ -133,7 +133,12 @@ void Nrpa<B,M,L,PL,LM>::updatePolicy(int level, Policy *policy){
   using namespace std; 
 
   static Policy newPol;
-  newPol = *policy; //TODO remove this useless copy!!
+  //  newPol = *policy; //TODO remove this useless copy!!
+
+  for (int i = 0; i < _bestRollout[level].length(); i++) {
+    for (int j = 0; j < _legalMoveCodeLen[level][i]; j++)
+      newPol.setProb (_legalMoveCodes[level][i][j], policy->prob (_legalMoveCodes[level][i][j] ));
+  }
 
 
   int length = _bestRollout[level].length(); 
@@ -162,11 +167,14 @@ void Nrpa<B,M,L,PL,LM>::updatePolicy(int level, Policy *policy){
 
 
   }
-  // for(int i = 0; i < _bestRollout.length(); i++)
-  //   for(int j = 0; j < _legalMoveCodes[i].size(); j++)
-  //     _policy.setProb(_legalMoveCodes[i][j], newPol.prob(_legalMoveCodes[i][j])); 
 
-  *policy = newPol; 
+  for (int i = 0; i < _bestRollout[level].length(); i++) {
+    for (int j = 0; j < _legalMoveCodeLen[level][i]; j++)
+      policy->setProb (_legalMoveCodes[level][i][j], newPol.prob(_legalMoveCodes[level][i][j] ));
+  }
+
+
+  //  *policy = newPol; 
 
   // cout<<"POLICY "<<endl;
   // policy->print(cout);
@@ -192,6 +200,7 @@ double Nrpa<B,M,L,PL,LM>::playout (const Policy &policy) {
 
     if (board.terminal ()) {
       double score = board.score(); 
+
       _bestRollout[0].setScore(score);
       return score; 
     }
