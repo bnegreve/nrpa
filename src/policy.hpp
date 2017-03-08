@@ -4,12 +4,12 @@
 
 #ifndef POLICY_HPP
 
-const int SizeTablePolicy = 65535;
-
-#if 1
+#if 0 // if set to 1, use std hash map, otherwise, use the one from Tristan (faster so far). 
 class Policy{
 
 public:
+  inline Policy(){
+  }
 
   inline double prob(int code) const {
     auto hit = _probs.find(code);
@@ -70,6 +70,7 @@ class ProbabilityCode {
   double proba;
 };
 
+const int SizeTablePolicy = 65535;
 
 class Policy {
  public:
@@ -83,7 +84,7 @@ class Policy {
   }
 
 
-  void setProb (int code, double proba) {
+  inline void setProb (int code, double proba) {
     int index = code & SizeTablePolicy;
     for (int i = 0; i < table [index].size (); i++) {
       if (table [index] [i].code == code) {
@@ -97,7 +98,7 @@ class Policy {
     table [index].push_back (p);
   }
 
-  void updateProb(int code, double delta){
+  inline void updateProb(int code, double delta){
     int index = code & SizeTablePolicy;
     for (int i = 0; i < table [index].size (); i++) {
       if (table [index] [i].code == code) {
@@ -111,7 +112,7 @@ class Policy {
     table [index].push_back (p);
   }
 
-  double prob (int code) {
+  inline double prob (int code) const {
     int index = code & SizeTablePolicy;
     for (int i = 0; i < table [index].size (); i++)
       if (table [index] [i].code == code) {
@@ -121,12 +122,11 @@ class Policy {
     return 0.0;
   }
   
-  void reset(){
+  inline void reset(){
     for(int i = 0; i < SizeTablePolicy; i++){
       table[i].clear(); 
     }
   }
-
 
 };
 

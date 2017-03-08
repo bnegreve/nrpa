@@ -133,15 +133,15 @@ void Nrpa<B,M,L,PL,LM>::updatePolicy(int level, Policy *policy){
   using namespace std; 
 
   static Policy newPol;
-  //  newPol = *policy; //TODO remove this useless copy!!
-
-  for (int i = 0; i < _bestRollout[level].length(); i++) {
-    for (int j = 0; j < _legalMoveCodeLen[level][i]; j++)
-      newPol.setProb (_legalMoveCodes[level][i][j], policy->prob (_legalMoveCodes[level][i][j] ));
-  }
-
-
   int length = _bestRollout[level].length(); 
+
+  //  newPol = *policy; //complete copy is not necessary
+
+  /* Copy data for the legal moves only into a new policy */ 
+  for (int step = 0; step < length; step++) 
+    for (int i = 0; i < _legalMoveCodeLen[level][step]; i++){
+      newPol.setProb (_legalMoveCodes[level][step][i], policy->prob (_legalMoveCodes[level][step][i] ));
+    }
 
   for(int step = 0; step < length; step++){
     int code = _bestRollout[level].move(step); 
@@ -150,36 +150,20 @@ void Nrpa<B,M,L,PL,LM>::updatePolicy(int level, Policy *policy){
     double z = 0.; 
     for(int i = 0; i < _legalMoveCodeLen[level][step]; i++)
       z += exp (policy->prob( _legalMoveCodes[level][step][i] ));
-    // cout<<"LEGAL MOVE LEN "<<_legalMoveCodeLen[level][step]<<" "<<level<<endl;
-    // for(int i = 0; i < _legalMoveCodeLen[level][step]; i++){
-    //   cout<<_legalMoveCodes[level][step][i]<<" "; 
-    // }
-    // cout<<endl;
 
     for(int i = 0; i < _legalMoveCodeLen[level][step]; i++){
       int move = _legalMoveCodes[level][step][i]; 
-      newPol.setProb(move, newPol.prob(move) - ALPHA * exp (policy->prob(move)) / z );
+      newPol.updateProb(move, - ALPHA * exp (policy->prob(move)) / z );
     }
-    
-    //    newPol.print(std::cout);
-    //    exit(1); 
-
-
 
   }
 
-  for (int i = 0; i < _bestRollout[level].length(); i++) {
+  /* Copy updated data back into the policy */ 
+  for (int i = 0; i < length; i++) 
     for (int j = 0; j < _legalMoveCodeLen[level][i]; j++)
       policy->setProb (_legalMoveCodes[level][i][j], newPol.prob(_legalMoveCodes[level][i][j] ));
-  }
-
 
   //  *policy = newPol; 
-
-  // cout<<"POLICY "<<endl;
-  // policy->print(cout);
-  //  exit(1); 
-
 
 }
 
