@@ -82,6 +82,77 @@ std::ostream &operator<<(std::ostream &, const Rollout<PL> &);
 template <int PL>
 std::istream &operator>>(std::istream &is, Rollout<PL> &r); 
 
+template <int PL, int LM>
+class LegalMoves{
+public:
+
+
+  inline void setNbSteps(int step){
+    _nbSteps = step; 
+  }
+
+  inline void addStep(){
+    _nbSteps++;
+  }
+
+
+  inline void setNbMoves(int step, int size){
+    assert(step < _nbSteps); 
+    _nbMoves[step] = size; 
+  }
+
+  inline void addMove(int step, int move){
+    assert(step < _nbSteps);
+    int idx = _nbMoves[step]++;
+    _moves[step][idx] = move; 
+  }
+
+  inline void setMove(int step, int idx, int move){
+    assert(step < _nbSteps);
+    assert(idx < _nbMoves[step]); 
+    _moves[step][idx] = move; 
+  }
+
+
+  inline int nbMoves(int step) const{
+    assert(step < _nbSteps); 
+    return _nbMoves[step]; 
+  }
+
+
+  inline int move(int step, int idx) const{
+    assert(step < _nbSteps && idx < _nbMoves[step]);
+    return _moves[step][idx]; 
+  }
+
+  inline void copy(const LegalMoves &lm){
+    _nbSteps = lm._nbSteps; 
+    std::copy(lm._nbMoves, lm._nbMoves + _nbSteps, _nbMoves); 
+    for(int i = 0; i < _nbSteps; i++)
+      std::copy(lm._moves[i], lm._moves[i] + lm._nbMoves[i], _moves[i]);
+  }
+
+  inline void operator=(const LegalMoves &lm){
+    this->copy(lm); 
+  }
+
+  inline void resetStep(){
+    _nbSteps = 0; 
+  }
+
+  inline void reset(){
+    for(int i = 0; i < _nbSteps; i++)
+      _nbMoves[i] = 0; 
+    _nbSteps = 0; 
+  }
+
+private:
+  int _nbSteps; 
+  int _nbMoves[PL]; 
+  int _moves[PL][LM];
+
+};
+
 
 #include "rollout.inl"
 
