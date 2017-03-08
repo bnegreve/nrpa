@@ -17,8 +17,7 @@ using namespace std;
 Rollout::Rollout(int level):_level(level), _score(numeric_limits<double>::lowest()){}
 
 /* Create a rollout object from rollout data */ 
-Rollout::Rollout(int *rolloutData, int length, int level, double score)
-  :std::vector<int>(length), _level(level), _score(score){
+Rollout::Rollout(int *rolloutData, int length, int level, double score): _nbMoves(length), _level(level), _score(score){
 addAllMoves(rolloutData, length); 
 }
 
@@ -47,15 +46,15 @@ void Rollout::load(const string &filename, const string &lockfile){
 }
 
 void Rollout::compareAndSwap(const string &filename, const string &lockfile){
-  Rollout best;
-  best.load(filename, lockfile);
-  if(_score > best._score || best.size() == 0){
-    //	    cout<<best.size() << " " <<best._level <<" " <<_level<<endl; 
-    assert(best.size() == 0 || best._level == _level);
-    this->store(filename, lockfile); 
-  }
-  else
-    *this = best;
+  // Rollout best;
+  // best.load(filename, lockfile);
+  // if(_score > best._score || best.size() == 0){
+  //   //	    cout<<best.size() << " " <<best._level <<" " <<_level<<endl; 
+  //   assert(best.size() == 0 || best._level == _level);
+  //   this->store(filename, lockfile); 
+  // }
+  // else
+  //   *this = best;
 }
 
 
@@ -63,8 +62,8 @@ ostream &operator<<(ostream &os, const Rollout &r){
   os<<r.length()<<" "; 
   os<<r._level<<" "; 
   os<<r._score<<" "; 
-  for(auto it = r.begin(); it != r.end(); it++)
-    os<<*it<<" "; 
+  for(int i = 0; i < r._nbMoves; i++)
+    os<<r._moves[i]<<" "; 
   //  if(r.length() > 0) os<<r.back();
   return os; 
 }
@@ -75,10 +74,9 @@ istream &operator>>(istream &is, Rollout &r){
   is>>length;
   is>>r._level; 
   is>>r._score; 
-  r.clear();
-  r.resize(length); 
+  r.reset(); 
   for(int i = 0; i < length; i++){
-    is>>r[i];
+    is>>r._moves[i];
   }
   if(is.eof()){
     cerr<<"Warning, cannot read Rollout from file"<<endl;
