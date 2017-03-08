@@ -4,7 +4,7 @@ CXXFLAGS=-O3 -g -DNDEBUG
 #CXXFLAGS=-O0 --no-inline  -g
 
 
-OBJS= nrpa.o movemap.o
+OBJS= nrpa.o 
 
 %.o: %.cpp %.hpp
 	$(CXX) $(CXXFLAGS) -o $@ -c $< 
@@ -19,7 +19,6 @@ clean:
 	rm -rf *.o same leftMove *~
 
 # non trivial deps. 
-same.o: same.cpp nrpa.hpp rollout.hpp movemap.hpp
-leftMove.o: leftMove.cpp nrpa.hpp rollout.hpp movemap.hpp
-nrpa.o: nrpa.cpp nrpa.hpp rollout.hpp movemap.hpp
+nrpa.o: nrpa.cpp nrpa.hpp rollout.hpp rollout.inl policy.hpp nrpa.inl
+
 

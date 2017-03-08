@@ -46,22 +46,12 @@ public:
 
   inline void addMove(int code){ _moves[_length++] = code; }
 
-  // inline void setMoves(std::vector<int> rolloutCodes){
-  //   std::vector<int>::swap(rolloutCodes); 
-  // }
-
   inline std::vector<int> *moves() { assert(false);return 0; }
 
   inline void addAllMoves(int *moves, int length){ 
     std::copy(moves, moves + length, _moves);
     _length = length; 
   }
-
-  // inline void swap(Rollout<PL> *other){
-  //   _level = other->_level;
-  //   _score = other->_score;
-  //   std::vector<int>::swap(*other); 
-  // }
 
   inline void reset(){
     _score = std::numeric_limits<double>::lowest();
