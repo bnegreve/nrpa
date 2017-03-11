@@ -34,24 +34,32 @@ public:
   static constexpr double ALPHA = 1.0; 
 
   /* Data structures preallocated for each  Nrpa recursive call (i.e.) one per level. */ 
-  struct NrpaData{
+  struct NrpaLevel{
 
     double bestScore; 
-    Policy policy; 
+    Policy levelPolicy; 
     Rollout<PL> bestRollout; 
     vector<M> bestRolloutMoves;  
     LegalMoves<PL, LM> legalMoveCodes;
+  
+    double run(int level, const Policy &policy);     
+    void updatePolicy(); 
+    double playout (const Policy &policy);
 
   }; 
 
-  NrpaData _nrpa[L]; 
+
+
+  static NrpaLevel _nrpa[L]; 
 
 public:
 
+
+
   double run(int level = 4); 
-  double run(int level, const Policy &policy); 
-  double playout (const Policy &policy);
-  void updatePolicy(int level, Policy *policy); 
+
+
+
   
 }; 
 
