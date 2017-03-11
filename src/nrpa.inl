@@ -36,8 +36,9 @@ double Nrpa<B,M,L,PL,LM>::run(int level, const Policy &policy){
 	}
       }
 
-      /* Update policy only a new best sequence is found. */ 
-      updatePolicy(level, &_nrpa[level].policy); 
+      if(i != N - 1)
+	/* Update policy only a new best sequence is found. */ 
+	updatePolicy(level, &_nrpa[level].policy); 
 
     }
     return _nrpa[level].bestRollout.score(); 
