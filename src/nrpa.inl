@@ -35,7 +35,7 @@ double Nrpa<B,M,L,PL,LM>::NrpaLevel::run(int level, const Policy &policy){
     for(int i = 0; i < N; i+= nbThreads){
       /* Run n thraeds */ 
       for(int j = 0; j < nbThreads; j++){
-	res[j] = t.submit([ this, level, subs, j ]() -> int {
+	res[j] = t.submit([ this, level, j ]() -> int {
 	    NrpaLevel *sub = &subs[j]; 
 	    sub->run(level - 1, this->levelPolicy); return 1; });
       }
