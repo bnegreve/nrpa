@@ -22,11 +22,11 @@ double Nrpa<B,M,L,PL,LM>::NrpaLevel::run(int level, const Policy &policy){
   bestRollout.reset(); 
   levelPolicy = policy; 
 
-  int par = (level == 1); 
-  int nbThreads = 4; 
+  int par = (level == 1); // TODO: cannot be anything but 1 at this time, 
   if(par){
     
     static ThreadPool t; 
+    static const int nbThreads = t.nbThreads(); 
     static NrpaLevel *subs = new NrpaLevel[nbThreads]; 
     future<int> *res = new future<int>[nbThreads]; 
 
@@ -38,15 +38,22 @@ double Nrpa<B,M,L,PL,LM>::NrpaLevel::run(int level, const Policy &policy){
 	    sub->run(level - 1, this->levelPolicy); return 1; });
       }
 
+
+      /* fetch the best rollout among all parallel runs (if any better than before) */ 
+      int best = -1; 
+      double bestScore = bestRollout.score();// numeric_limits<double>::lowest(); 
       for(int j = 0; j < nbThreads; j++){
-	res[j].wait(); 
-	if (subs[j].bestRollout.score() >= bestRollout.score()){
-	  bestRollout = subs[j].bestRollout;
-	  legalMoveCodes = subs[j].legalMoveCodes; 
-	}
+      	res[j].wait();
+      	if(subs[j].bestRollout.score() >= bestScore){
+      	  bestScore = subs[j].bestRollout.score(); 
+      	  best = j;
+      	}
       }
-	
-      updatePolicy( ALPHA * nbThreads );  // TODO skip last update policy
+      if(best >= 0){
+	bestRollout = subs[best].bestRollout; // TODO is this copy necessary
+	legalMoveCodes = subs[best].legalMoveCodes;
+      }
+      updatePolicy( ALPHA * nbThreads );
     }
   }
   else{
