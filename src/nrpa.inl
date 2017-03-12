@@ -6,8 +6,10 @@
 
 template <typename B,typename  M, int L, int PL, int LM>
 double Nrpa<B,M,L,PL,LM>::run(int level){
+  assert(level < L); 
   Policy policy; 
-  return _nrpa[level].run(level, policy); 
+  double score =  _nrpa[level].run(level, policy);
+  cout<<"Maxscore: "<<score<<endl;
 }
 
 template <typename B,typename  M, int L, int PL, int LM>
