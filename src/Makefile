@@ -1,7 +1,7 @@
 all: leftMove same
 
-CXXFLAGS=-O3 -g -DNDEBUG
-#CXXFLAGS=-O0 --no-inline  -g
+CXXFLAGS=-O3 -g -DNDEBUG -lpthread -std=c++11
+#CXXFLAGS=-O0 --no-inline  -g -lpthread
 
 
 OBJS= nrpa.o 
@@ -19,6 +19,6 @@ clean:
 	rm -rf *.o same leftMove *~
 
 # non trivial deps. 
-nrpa.o: nrpa.cpp nrpa.hpp rollout.hpp rollout.inl policy.hpp nrpa.inl
+nrpa.o: nrpa.cpp nrpa.hpp rollout.hpp rollout.inl policy.hpp nrpa.inl threadpool.hpp
 
 

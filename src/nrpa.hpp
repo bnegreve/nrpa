@@ -43,7 +43,7 @@ public:
     LegalMoves<PL, LM> legalMoveCodes;
   
     double run(int level, const Policy &policy);     
-    void updatePolicy(); 
+    void updatePolicy(double alpha = ALPHA); 
     double playout (const Policy &policy);
 
   }; 

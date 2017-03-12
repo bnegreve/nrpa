@@ -2,6 +2,8 @@
 // Made by Benjamin Negrevergne 
 // Started on <2017-03-08 Wed>
 
+#include "threadpool.hpp"
+
 template <typename B,typename  M, int L, int PL, int LM>
 double Nrpa<B,M,L,PL,LM>::run(int level){
   Policy policy; 
@@ -16,19 +18,47 @@ double Nrpa<B,M,L,PL,LM>::NrpaLevel::run(int level, const Policy &policy){
   if (level == 0) {
     return playout(policy); 
   }
-  else {
 
-    bestRollout.reset(); 
-    levelPolicy = policy; 
+  bestRollout.reset(); 
+  levelPolicy = policy; 
 
-    NrpaLevel &sub = _nrpa[level - 1]; 
-    for (int i = 0; i < N; i++) {
-      double score = sub.run(level - 1, levelPolicy); 
+  int par = (level == 1); 
+  int nbThreads = 4; 
+  if(par){
+    
+    static ThreadPool t; 
+    static NrpaLevel *subs = new NrpaLevel[nbThreads]; 
+    future<int> *res = new future<int>[nbThreads]; 
 
+    for(int i = 0; i < N; i+= nbThreads){
+      /* Run n thraeds */ 
+      for(int j = 0; j < nbThreads; j++){
+	res[j] = t.submit([ this, level, subs, j ]() -> int {
+	    NrpaLevel *sub = &subs[j]; 
+	    sub->run(level - 1, this->levelPolicy); return 1; });
+      }
+
+      for(int j = 0; j < nbThreads; j++){
+	res[j].wait(); 
+	if (subs[j].bestRollout.score() >= bestRollout.score()){
+	  bestRollout = subs[j].bestRollout;
+	  legalMoveCodes = subs[j].legalMoveCodes; 
+	}
+      }
+	
+      updatePolicy( ALPHA * nbThreads );  // TODO skip last update policy
+    }
+  }
+  else{
+
+    NrpaLevel *sub = &_nrpa[level -1]; 
+
+    for(int i = 0; i < N; i++){
+      double score = sub->run(level - 1, levelPolicy); 
       if (score >= bestRollout.score()) {
-	int length = sub.bestRollout.length(); 
-	bestRollout = sub.bestRollout;
-	legalMoveCodes = sub.legalMoveCodes; 
+	int length = sub->bestRollout.length(); 
+	bestRollout = sub->bestRollout;
+	legalMoveCodes = sub->legalMoveCodes; 
 	
 	if (level > 2) {
 	  for (int t = 0; t < level - 1; t++)
@@ -38,13 +68,12 @@ double Nrpa<B,M,L,PL,LM>::NrpaLevel::run(int level, const Policy &policy){
       }
 
       if(i != N - 1)
-	/* Update policy only a new best sequence is found. */ 
 	updatePolicy(); 
-
     }
-    return bestRollout.score(); 
   }
+  return bestRollout.score();
 }
+
 
 template <typename B,typename  M, int L, int PL, int LM>
 double Nrpa<B,M,L,PL,LM>::NrpaLevel::playout (const Policy &policy) {
@@ -105,7 +134,7 @@ double Nrpa<B,M,L,PL,LM>::NrpaLevel::playout (const Policy &policy) {
 
 
 template <typename B,typename M, int L, int PL, int LM>
-void Nrpa<B,M,L,PL,LM>::NrpaLevel::updatePolicy(){
+void Nrpa<B,M,L,PL,LM>::NrpaLevel::updatePolicy( double alpha ){
 
   //  assert(rollout.length() <= _nrpa[level].legalMoveCodes.size()); 
   using namespace std; 
@@ -123,7 +152,7 @@ void Nrpa<B,M,L,PL,LM>::NrpaLevel::updatePolicy(){
 
   for(int step = 0; step < length; step++){
     int code = bestRollout.move(step); 
-    newPol.setProb(code, newPol.prob(code) + ALPHA);
+    newPol.setProb(code, newPol.prob(code) + alpha);
 
     double z = 0.; 
     for(int i = 0; i < legalMoveCodes.nbMoves(step); i++)
@@ -131,7 +160,7 @@ void Nrpa<B,M,L,PL,LM>::NrpaLevel::updatePolicy(){
 
     for(int i = 0; i < legalMoveCodes.nbMoves(step); i++){
       int move = legalMoveCodes.move(step, i); 
-      newPol.updateProb(move, - ALPHA * exp (levelPolicy.prob(move)) / z );
+      newPol.updateProb(move, - alpha * exp (levelPolicy.prob(move)) / z );
     }
 
   }
