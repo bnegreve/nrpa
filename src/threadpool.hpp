@@ -37,6 +37,7 @@ class ThreadPool{
       if(gotSomething){
 	int ret = f();
 	p->set_value( ret ) ; 
+	delete p; 
       }
       else {
 	this_thread::yield();
@@ -49,6 +50,12 @@ public:
   inline ThreadPool(){
     init(); 
   }
+
+  inline ~ThreadPool(){
+    end();
+  }
+
+
 
   inline future<int> submit(FunctionType f) {
     promise<int> *p = new promise<int>; 
@@ -71,8 +78,10 @@ public:
 
   inline void end(){
     _done = true;
-    for(int i = 0; i < _nbThreads; i++)
+    for(int i = 0; i < _nbThreads; i++){
       _threads[i]->join(); 
+      delete _threads[i]; 
+    }
   }
 
   inline int nbThreads() const { return _nbThreads; }

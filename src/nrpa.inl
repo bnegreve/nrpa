@@ -30,7 +30,7 @@ double Nrpa<B,M,L,PL,LM>::NrpaLevel::run(int level, const Policy &policy){
     static ThreadPool t; 
     static const int nbThreads = t.nbThreads(); 
     static NrpaLevel *subs = new NrpaLevel[nbThreads]; 
-    future<int> *res = new future<int>[nbThreads]; 
+    static future<int> *res = new future<int>[nbThreads]; 
 
     for(int i = 0; i < N; i+= nbThreads){
       /* Run n thraeds */ 
