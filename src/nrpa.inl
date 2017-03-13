@@ -5,9 +5,10 @@
 #include "threadpool.hpp"
 
 template <typename B,typename  M, int L, int PL, int LM>
-double Nrpa<B,M,L,PL,LM>::run(int level){
+double Nrpa<B,M,L,PL,LM>::run(int level, int timeout){
   assert(level < L); 
   Policy policy; 
+  if(timeout != -1) setTimeout(timeout); 
   double score =  _nrpa[level].run(level, policy);
   cout<<"Maxscore: "<<score<<endl;
 }
@@ -55,6 +56,9 @@ double Nrpa<B,M,L,PL,LM>::NrpaLevel::run(int level, const Policy &policy){
 	bestRollout = subs[best].bestRollout; // TODO is this copy necessary
 	legalMoveCodes = subs[best].legalMoveCodes;
       }
+
+      if(_timeout) { return bestRollout.score(); }
+
       updatePolicy( ALPHA * nbThreads );
     }
   }
@@ -75,6 +79,8 @@ double Nrpa<B,M,L,PL,LM>::NrpaLevel::run(int level, const Policy &policy){
 	  fprintf(stderr,"Level : %d, N:%d, score : %f\n", level, i, bestRollout.score());
 	}
       }
+
+      if(_timeout) { return bestRollout.score(); }
 
       if(i != N - 1)
 	updatePolicy(); 
@@ -183,6 +189,19 @@ void Nrpa<B,M,L,PL,LM>::NrpaLevel::updatePolicy( double alpha ){
 
 }
 
+template <typename B,typename M, int L, int PL, int LM>
+void Nrpa<B,M,L,PL,LM>::setTimeout(int sec){
+  thread t([sec] { 
+      sleep(sec);
+      _timeout = true;
+    });
+  t.detach(); 
+}
+
+
 /* Instanciation of static NRPA structures */ 
 template <typename B,typename M, int L, int PL, int LM>
 typename Nrpa<B,M,L,PL,LM>::NrpaLevel Nrpa<B,M,L,PL,LM>::_nrpa[L]; 
+
+template <typename B,typename M, int L, int PL, int LM>
+atomic_bool Nrpa<B,M,L,PL,LM>::_timeout; 

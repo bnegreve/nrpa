@@ -8,6 +8,8 @@
 #include <unordered_map>
 #include <cmath>
 #include <limits>
+#include <atomic>
+
 #include "rollout.hpp"
 #include "policy.hpp"
 
@@ -48,18 +50,14 @@ public:
 
   }; 
 
-
-
   static NrpaLevel _nrpa[L]; 
+  static atomic_bool _timeout; 
 
 public:
 
+  double run(int level = 4, int timeout = -1); 
 
-
-  double run(int level = 4); 
-
-
-
+  static void setTimeout(int sec); 
   
 }; 
 
