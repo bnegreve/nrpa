@@ -59,10 +59,11 @@ public:
 
   inline future<int> submit(FunctionType f) {
     promise<int> *p = new promise<int>; 
+    future<int> res = p->get_future(); 
     _mutex.lock(); 
     _tasks.push(make_pair(p, f));
     _mutex.unlock(); 
-    return p->get_future();  
+    return res;  
   }
 
   inline void init(int nbThreads = thread::hardware_concurrency()){
