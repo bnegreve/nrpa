@@ -29,12 +29,17 @@ extern int startLearning;
 
 template <typename B, typename M, int L, int PL, int LM>
 class Nrpa {
+public: 
 
-public:
-
-  static const int N = 10; 
   static constexpr double ALPHA = 1.0; 
 
+  double run(int level = L - 1, int nbIter = 10, int timeout = -1); 
+  double test(int nbRun = 5, int level = L - 1, int nbIter = 10, int timeout = -1); 
+
+  static void setTimeout(int sec); 
+
+private:
+  
   /* Data structures preallocated for each  Nrpa recursive call (i.e.) one per level. */ 
   struct NrpaLevel{
 
@@ -43,21 +48,18 @@ public:
     Rollout<PL> bestRollout; 
     vector<M> bestRolloutMoves;  
     LegalMoves<PL, LM> legalMoveCodes;
-  
-    double run(int level, const Policy &policy);     
+
     void updatePolicy(double alpha = ALPHA); 
     double playout (const Policy &policy);
 
   }; 
 
+  double run(NrpaLevel *nl, int level, const Policy &policy);     
+
   static NrpaLevel _nrpa[L]; 
+  static int _nbIter; 
   static atomic_bool _timeout; 
 
-public:
-
-  double run(int level = 4, int timeout = -1); 
-
-  static void setTimeout(int sec); 
   
 }; 
 
