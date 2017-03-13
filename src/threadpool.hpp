@@ -47,8 +47,8 @@ class ThreadPool{
 
 
 public: 
-  inline ThreadPool(){
-    init(); 
+  inline ThreadPool(int n = thread::hardware_concurrency()){
+    init(n); 
   }
 
   inline ~ThreadPool(){
