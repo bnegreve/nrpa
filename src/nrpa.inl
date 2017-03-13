@@ -8,10 +8,13 @@ template <typename B,typename  M, int L, int PL, int LM>
 double Nrpa<B,M,L,PL,LM>::run(int level, int nbIter, int timeout){
   assert(level < L); 
   Policy policy; 
+  _timeout = false; 
+
   if(timeout != -1) setTimeout(timeout);  // Warning: all these are static, so Nrpa should remain a singleton 
   _nbIter = nbIter; 
   double score =  run(&_nrpa[level], level, policy);
   cout<<"Maxscore: "<<score<<endl;
+  return score; 
 }
 
 template <typename B,typename  M, int L, int PL, int LM>
@@ -19,9 +22,10 @@ double Nrpa<B,M,L,PL,LM>::test(int nbRun, int level, int nbIter, int timeout){
 
   double score = 0; 
   for(int i = 0; i < nbRun; i++){
-    score += run(level, nbIter, timeout); 
+    Nrpa<B,M,L,PL,LM> nrpa; 
+    score += nrpa.run(level, nbIter, timeout);
   }
-
+  cout<<"Avgscore: "<< score / nbRun<<endl; 
   return score / nbRun; 
   
 }
@@ -71,7 +75,7 @@ double Nrpa<B,M,L,PL,LM>::run(NrpaLevel *nl, int level, const Policy &policy){
 	nl->legalMoveCodes = subs[best].legalMoveCodes;
       }
 
-      if(_timeout) { return nl->bestRollout.score(); }
+      if(checkTimeout()) { return nl->bestRollout.score(); }
 
       nl->updatePolicy( ALPHA * nbThreads );
     }
@@ -87,14 +91,14 @@ double Nrpa<B,M,L,PL,LM>::run(NrpaLevel *nl, int level, const Policy &policy){
 	nl->bestRollout = sub->bestRollout;
 	nl->legalMoveCodes = sub->legalMoveCodes; 
 	
-	if (level > 2) {
+	if (level > L - 3) {
 	  for (int t = 0; t < level - 1; t++)
 	    fprintf (stderr, "\t");
 	  fprintf(stderr,"Level : %d, N:%d, score : %f\n", level, i, nl->bestRollout.score());
 	}
       }
 
-      if(_timeout) { return nl->bestRollout.score(); }
+      if(checkTimeout()) { return nl->bestRollout.score(); }
 
       if(i != _nbIter - 1)
 	nl->updatePolicy(); 
@@ -205,11 +209,21 @@ void Nrpa<B,M,L,PL,LM>::NrpaLevel::updatePolicy( double alpha ){
 
 template <typename B,typename M, int L, int PL, int LM>
 void Nrpa<B,M,L,PL,LM>::setTimeout(int sec){
-  thread t([sec] { 
+  thread t([sec, this] { 
       sleep(sec);
       _timeout = true;
     });
   t.detach(); 
+}
+
+template <typename B,typename M, int L, int PL, int LM>
+bool Nrpa<B,M,L,PL,LM>::checkTimeout(){
+  if(_timeout){
+    cout<<"Timeout!"<<endl;
+    return true;
+  }
+
+  return false; 
 }
 
 
@@ -217,9 +231,4 @@ void Nrpa<B,M,L,PL,LM>::setTimeout(int sec){
 template <typename B,typename M, int L, int PL, int LM>
 typename Nrpa<B,M,L,PL,LM>::NrpaLevel Nrpa<B,M,L,PL,LM>::_nrpa[L]; 
 
-template <typename B,typename M, int L, int PL, int LM>
-atomic_bool Nrpa<B,M,L,PL,LM>::_timeout; 
-
-template <typename B,typename M, int L, int PL, int LM>
-int Nrpa<B,M,L,PL,LM>::_nbIter; 
 

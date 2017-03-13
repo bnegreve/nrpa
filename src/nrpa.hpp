@@ -34,9 +34,10 @@ public:
   static constexpr double ALPHA = 1.0; 
 
   double run(int level = L - 1, int nbIter = 10, int timeout = -1); 
-  double test(int nbRun = 5, int level = L - 1, int nbIter = 10, int timeout = -1); 
+  void setTimeout(int sec);
+  bool checkTimeout(); 
 
-  static void setTimeout(int sec); 
+  static double test(int nbRun = 5, int level = L - 1, int nbIter = 10, int timeout = -1); 
 
 private:
   
@@ -57,8 +58,8 @@ private:
   double run(NrpaLevel *nl, int level, const Policy &policy);     
 
   static NrpaLevel _nrpa[L]; 
-  static int _nbIter; 
-  static atomic_bool _timeout; 
+  int _nbIter; 
+  atomic_bool _timeout; 
 
   
 }; 
