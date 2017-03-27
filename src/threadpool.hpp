@@ -8,6 +8,9 @@
 #include <iostream>
 #include <cassert> 
 
+//#define _GNU_SOURCE             /* See feature_test_macros(7) */
+#include <sched.h>
+
 
 using namespace std; 
 class ThreadPool{
@@ -21,7 +24,10 @@ class ThreadPool{
   mutex _mutex;
   thread *_threads[MAX_THREADS]; 
 
-  inline void workerThread() {
+  inline void workerThread(int id) {
+
+    bindThread(id); 
+
     while(!_done) {         
       FunctionType f; 
       promise<int> *p; 
@@ -72,9 +78,11 @@ public:
     _nbThreads = nbThreads; 
     cout<<"Initializing thread pool with "<<_nbThreads<<" thread(s)."<<endl; 
     _done = false; 
+ 
+    for(int i = 0; i < _nbThreads; i++){
+      _threads[i] = new thread( [this, i] { this->workerThread(i); } );
 
-    for(int i = 0; i < _nbThreads; i++)
-      _threads[i] = new thread( [this] { this->workerThread(); } );
+    }
 
   }
 
@@ -94,6 +102,12 @@ public:
 
   inline int nbThreads() const { assert(_nbThreads != -1);  return _nbThreads; }
 
+  inline void bindThread(int cpuId){
+    cpu_set_t set;
+    CPU_ZERO(&set); 
+    CPU_SET(cpuId, &set);  
+    sched_setaffinity(0, sizeof(cpu_set_t), &set);
+  }
 
 };
 
