@@ -32,6 +32,8 @@ class Nrpa {
 public: 
 
   static constexpr double ALPHA = 1.0; 
+  static const int MAX_THREADS = 128; 
+
 
   Nrpa(int maxThreads = 0);
   double run(int level = L - 1, int nbIter = 10, int timeout = -1); 
@@ -49,6 +51,7 @@ private:
     Rollout<PL> bestRollout; 
     vector<M> bestRolloutMoves;  
     LegalMoves<PL, LM> legalMoveCodes;
+    future<int> result; // only used for parallel calls. 
 
     void updatePolicy(double alpha = ALPHA); 
     double playout (const Policy &policy);
@@ -71,7 +74,7 @@ private:
   static ThreadPool _threadPool; 
 
   /* Data structures for parallel calls */ 
-  static NrpaLevel _subs[100]; //TODO FIX
+  static NrpaLevel _subs[MAX_THREADS]; 
   
 }; 
 

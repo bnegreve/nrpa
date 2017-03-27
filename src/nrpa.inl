@@ -7,6 +7,7 @@
 
 template <typename B,typename  M, int L, int PL, int LM>
 Nrpa<B,M,L,PL,LM>::Nrpa(int maxThreads){
+  assert(maxThreads < MAX_THREADS); 
 
   if(maxThreads == 1){
     _nbThreads = 1; 
@@ -78,6 +79,7 @@ template <typename B,typename  M, int L, int PL, int LM>
 double Nrpa<B,M,L,PL,LM>::runseq(NrpaLevel *nl, int level, const Policy &policy){
   using namespace std; 
   assert(level < L); 
+  assert(level != 0); // level 0 should be a call to rollout 
 
   nl->bestRollout.reset(); 
   nl->levelPolicy = policy; 
@@ -113,7 +115,7 @@ template <typename B,typename  M, int L, int PL, int LM>
 double Nrpa<B,M,L,PL,LM>::runpar(NrpaLevel *nl, int level, const Policy &policy){
   using namespace std; 
   assert(level < L); 
-  assert(level != 0); // cannot run a level 0 call (= a rollout) in parallel
+  assert(level != 0); // level 0 should be a call to rollout
 
   nl->bestRollout.reset(); 
   nl->levelPolicy = policy; 
@@ -122,12 +124,10 @@ double Nrpa<B,M,L,PL,LM>::runpar(NrpaLevel *nl, int level, const Policy &policy)
   //  static const int nbThreads = t.nbThreads(); 
   //    NrpaLevel *subs = &_subs; 
 
-  static future<int> *res = new future<int>[_nbThreads];  // TODO FIX
-
   for(int i = 0; i < _nbIter; i+= _nbThreads){
     /* Run n thraeds */ 
     for(int j = 0; j < _nbThreads; j++){
-      res[j] = _threadPool.submit([ this, nl, level, j ]() -> int {
+      _subs[j].result = _threadPool.submit([ this, nl, level, j ]() -> int {
 	  NrpaLevel *sub = &_subs[j]; 
 	  run(sub, level - 1, nl->levelPolicy); return 1; });
     }
@@ -137,7 +137,7 @@ double Nrpa<B,M,L,PL,LM>::runpar(NrpaLevel *nl, int level, const Policy &policy)
     int best = -1; 
     double bestScore = nl->bestRollout.score();// numeric_limits<double>::lowest(); 
     for(int j = 0; j < _nbThreads; j++){
-      res[j].wait();
+      _subs[j].result.wait();
       if(_subs[j].bestRollout.score() >= bestScore){
 	bestScore = _subs[j].bestRollout.score(); 
 	best = j;
@@ -287,5 +287,5 @@ template <typename B, typename M, int L, int PL, int LM>
 ThreadPool Nrpa<B,M,L,PL,LM>::_threadPool; 
 
 template <typename B, typename M, int L, int PL, int LM>
-typename Nrpa<B,M,L,PL,LM>::NrpaLevel Nrpa<B,M,L,PL,LM>::_subs[100]; 
+typename Nrpa<B,M,L,PL,LM>::NrpaLevel Nrpa<B,M,L,PL,LM>::_subs[MAX_THREADS]; 
 
