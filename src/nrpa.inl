@@ -53,85 +53,109 @@ double Nrpa<B,M,L,PL,LM>::test(int nbRun, int level, int nbIter, int timeout, in
   
 }
 
-
 template <typename B,typename  M, int L, int PL, int LM>
 double Nrpa<B,M,L,PL,LM>::run(NrpaLevel *nl, int level, const Policy &policy){
   using namespace std; 
   assert(level < L); 
 
+  double score; 
+
   if (level == 0) {
-    return nl->playout(policy); 
+    score = nl->playout(policy); 
   }
+  else if(_nbThreads > 1 && level == 1){
+    score = runpar(nl, level, policy); 
+  }
+  else{
+    score = runseq(nl, level, policy); 
+  }
+
+  return score; 
+
+}
+
+template <typename B,typename  M, int L, int PL, int LM>
+double Nrpa<B,M,L,PL,LM>::runseq(NrpaLevel *nl, int level, const Policy &policy){
+  using namespace std; 
+  assert(level < L); 
 
   nl->bestRollout.reset(); 
   nl->levelPolicy = policy; 
 
-  int parCall = level == 1; /* this is a parallel call  */ 
+  /* sequential call */ 
+  NrpaLevel *sub = &_nrpa[level -1]; 
 
-  if(_nbThreads < 2 || parCall == false){
-    /* sequential call */ 
-    NrpaLevel *sub = &_nrpa[level -1]; 
-
-    for(int i = 0; i < _nbIter; i++){
-      double score = run(sub, level - 1, nl->levelPolicy); 
-      if (score >= nl->bestRollout.score()) {
-	int length = sub->bestRollout.length(); 
-	nl->bestRollout = sub->bestRollout;
-	nl->legalMoveCodes = sub->legalMoveCodes; 
+  for(int i = 0; i < _nbIter; i++){
+    double score = run(sub, level - 1, nl->levelPolicy); 
+    if (score >= nl->bestRollout.score()) {
+      int length = sub->bestRollout.length(); 
+      nl->bestRollout = sub->bestRollout;
+      nl->legalMoveCodes = sub->legalMoveCodes; 
 	
-	if (level > L - 3) {
-	  for (int t = 0; t < level - 1; t++)
-	    fprintf (stderr, "\t");
-	  fprintf(stderr,"Level : %d, N:%d, score : %f\n", level, i, nl->bestRollout.score());
-	}
+      if (level > L - 3) {
+	for (int t = 0; t < level - 1; t++)
+	  fprintf (stderr, "\t");
+	fprintf(stderr,"Level : %d, N:%d, score : %f\n", level, i, nl->bestRollout.score());
       }
-
-      if(checkTimeout()) { return nl->bestRollout.score(); }
-
-      if(i != _nbIter - 1)
-	nl->updatePolicy(); 
     }
+
+    if(checkTimeout()) { return nl->bestRollout.score(); }
+
+    if(i != _nbIter - 1)
+      nl->updatePolicy(); 
   }
-  else{
-    
-    //  static ThreadPool t(maxThreads); 
-    //  static const int nbThreads = t.nbThreads(); 
-    //    NrpaLevel *subs = &_subs; 
-
-    static future<int> *res = new future<int>[_nbThreads];  // TODO FIX
-
-    for(int i = 0; i < _nbIter; i+= _nbThreads){
-      /* Run n thraeds */ 
-      for(int j = 0; j < _nbThreads; j++){
-	res[j] = _threadPool.submit([ this, nl, level, j ]() -> int {
-	    NrpaLevel *sub = &_subs[j]; 
-	    run(sub, level - 1, nl->levelPolicy); return 1; });
-      }
-
-
-      /* fetch the best rollout among all parallel runs (if any better than before) */ 
-      int best = -1; 
-      double bestScore = nl->bestRollout.score();// numeric_limits<double>::lowest(); 
-      for(int j = 0; j < _nbThreads; j++){
-      	res[j].wait();
-      	if(_subs[j].bestRollout.score() >= bestScore){
-      	  bestScore = _subs[j].bestRollout.score(); 
-      	  best = j;
-      	}
-      }
-      if(best >= 0){
-	nl->bestRollout = _subs[best].bestRollout; // TODO is this copy necessary
-	nl->legalMoveCodes = _subs[best].legalMoveCodes;
-      }
-
-      if(checkTimeout()) { return nl->bestRollout.score(); }
-
-      nl->updatePolicy( ALPHA * _nbThreads );
-    }
-  }
+  
   return nl->bestRollout.score();
+
 }
 
+template <typename B,typename  M, int L, int PL, int LM>
+double Nrpa<B,M,L,PL,LM>::runpar(NrpaLevel *nl, int level, const Policy &policy){
+  using namespace std; 
+  assert(level < L); 
+  assert(level != 0); // cannot run a level 0 call (= a rollout) in parallel
+
+  nl->bestRollout.reset(); 
+  nl->levelPolicy = policy; 
+    
+  //  static ThreadPool t(maxThreads); 
+  //  static const int nbThreads = t.nbThreads(); 
+  //    NrpaLevel *subs = &_subs; 
+
+  static future<int> *res = new future<int>[_nbThreads];  // TODO FIX
+
+  for(int i = 0; i < _nbIter; i+= _nbThreads){
+    /* Run n thraeds */ 
+    for(int j = 0; j < _nbThreads; j++){
+      res[j] = _threadPool.submit([ this, nl, level, j ]() -> int {
+	  NrpaLevel *sub = &_subs[j]; 
+	  run(sub, level - 1, nl->levelPolicy); return 1; });
+    }
+
+
+    /* fetch the best rollout among all parallel runs (if any better than before) */ 
+    int best = -1; 
+    double bestScore = nl->bestRollout.score();// numeric_limits<double>::lowest(); 
+    for(int j = 0; j < _nbThreads; j++){
+      res[j].wait();
+      if(_subs[j].bestRollout.score() >= bestScore){
+	bestScore = _subs[j].bestRollout.score(); 
+	best = j;
+      }
+    }
+    if(best >= 0){
+      nl->bestRollout = _subs[best].bestRollout; // TODO is this copy necessary
+      nl->legalMoveCodes = _subs[best].legalMoveCodes;
+    }
+
+    if(checkTimeout()) { return nl->bestRollout.score(); }
+
+    nl->updatePolicy( ALPHA * _nbThreads );
+  }
+
+  return nl->bestRollout.score();
+
+}
 
 template <typename B,typename  M, int L, int PL, int LM>
 double Nrpa<B,M,L,PL,LM>::NrpaLevel::playout (const Policy &policy) {

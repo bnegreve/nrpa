@@ -55,7 +55,9 @@ private:
 
   }; 
 
-  double run(NrpaLevel *nl, int level, const Policy &policy);     
+  double run(NrpaLevel *nl, int level, const Policy &policy);
+  double runseq(NrpaLevel *nl, int level, const Policy &policy);     
+  double runpar(NrpaLevel *nl, int level, const Policy &policy);     
   bool checkTimeout(); 
 
   int _nbIter; 
