@@ -1,3 +1,6 @@
+#ifndef THREADPOOL_HPP
+#define THREADPOOL_HPP
+
 #include <functional>
 #include <thread>
 #include <future>
@@ -46,15 +49,13 @@ class ThreadPool{
   }
 
 
-public: 
-  inline ThreadPool(int n = thread::hardware_concurrency()){
-    init(n); 
-  }
+public:
+  /* Done set to true initially, must call init() */ 
+  inline ThreadPool(): _done(true), _nbThreads(-1){}
 
   inline ~ThreadPool(){
     end();
   }
-
 
 
   inline future<int> submit(FunctionType f) {
@@ -77,15 +78,21 @@ public:
 
   }
 
+  inline bool initialized() const{
+    return _nbThreads != -1; 
+  }
+
   inline void end(){
-    _done = true;
-    for(int i = 0; i < _nbThreads; i++){
-      _threads[i]->join(); 
-      delete _threads[i]; 
+    if(!_done) {
+      _done = true;
+      for(int i = 0; i < _nbThreads; i++){
+	_threads[i]->join(); 
+	delete _threads[i]; 
+      }
     }
   }
 
-  inline int nbThreads() const { return _nbThreads; }
+  inline int nbThreads() const { assert(_nbThreads != -1);  return _nbThreads; }
 
 
 };
@@ -106,3 +113,5 @@ int main(){
 	    
 }
 #endif 
+
+#endif //THREADPOOL

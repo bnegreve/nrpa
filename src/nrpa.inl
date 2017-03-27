@@ -4,6 +4,25 @@
 #include <limits>
 #include "threadpool.hpp"
 
+
+template <typename B,typename  M, int L, int PL, int LM>
+Nrpa<B,M,L,PL,LM>::Nrpa(int maxThreads){
+
+  if(maxThreads == 1){
+    _nbThreads = 1; 
+    /* Only one thread is nedded, we don't need to create the threadpool */ 
+  }
+  else{
+    if( ! _threadPool.initialized() ){
+      if(maxThreads == 0)
+	_threadPool.init();
+      else
+	_threadPool.init(maxThreads);
+      _nbThreads = _threadPool.nbThreads(); 
+    }
+  }
+}
+
 template <typename B,typename  M, int L, int PL, int LM>
 double Nrpa<B,M,L,PL,LM>::run(int level, int nbIter, int timeout){
   assert(level < L); 
@@ -18,15 +37,19 @@ double Nrpa<B,M,L,PL,LM>::run(int level, int nbIter, int timeout){
 }
 
 template <typename B,typename  M, int L, int PL, int LM>
-double Nrpa<B,M,L,PL,LM>::test(int nbRun, int level, int nbIter, int timeout){
+double Nrpa<B,M,L,PL,LM>::test(int nbRun, int level, int nbIter, int timeout, int nbThreads){
 
-  double score = 0; 
+  double avgscore = 0;
+  double maxscore = numeric_limits<double>::lowest(); 
   for(int i = 0; i < nbRun; i++){
-    Nrpa<B,M,L,PL,LM> nrpa; 
-    score += nrpa.run(level, nbIter, timeout);
+    Nrpa<B,M,L,PL,LM> nrpa(nbThreads); 
+    double score = nrpa.run(level, nbIter, timeout);
+    avgscore += score;
+    maxscore = max(maxscore,  score); 
   }
-  cout<<"Avgscore: "<< score / nbRun<<endl; 
-  return score / nbRun; 
+  cout<<"Avgscore: "<< avgscore / nbRun<<endl; 
+  cout<<"Maxscore overall: "<< maxscore <<endl; 
+  return avgscore / nbRun; 
   
 }
 
@@ -43,45 +66,10 @@ double Nrpa<B,M,L,PL,LM>::run(NrpaLevel *nl, int level, const Policy &policy){
   nl->bestRollout.reset(); 
   nl->levelPolicy = policy; 
 
-  int par = (level == 1); // TODO: cannot be anything but 1 at this time, 
-  if(par){
-    
-    static ThreadPool t; 
-    static const int nbThreads = t.nbThreads(); 
-    static NrpaLevel *subs = new NrpaLevel[nbThreads]; 
-    static future<int> *res = new future<int>[nbThreads]; 
+  int parCall = level == 1; /* this is a parallel call  */ 
 
-    for(int i = 0; i < _nbIter; i+= nbThreads){
-      /* Run n thraeds */ 
-      for(int j = 0; j < nbThreads; j++){
-	res[j] = t.submit([ this, nl, level, j ]() -> int {
-	    NrpaLevel *sub = &subs[j]; 
-	    run(sub, level - 1, nl->levelPolicy); return 1; });
-      }
-
-
-      /* fetch the best rollout among all parallel runs (if any better than before) */ 
-      int best = -1; 
-      double bestScore = nl->bestRollout.score();// numeric_limits<double>::lowest(); 
-      for(int j = 0; j < nbThreads; j++){
-      	res[j].wait();
-      	if(subs[j].bestRollout.score() >= bestScore){
-      	  bestScore = subs[j].bestRollout.score(); 
-      	  best = j;
-      	}
-      }
-      if(best >= 0){
-	nl->bestRollout = subs[best].bestRollout; // TODO is this copy necessary
-	nl->legalMoveCodes = subs[best].legalMoveCodes;
-      }
-
-      if(checkTimeout()) { return nl->bestRollout.score(); }
-
-      nl->updatePolicy( ALPHA * nbThreads );
-    }
-  }
-  else{
-
+  if(_nbThreads < 2 || parCall == false){
+    /* sequential call */ 
     NrpaLevel *sub = &_nrpa[level -1]; 
 
     for(int i = 0; i < _nbIter; i++){
@@ -102,6 +90,43 @@ double Nrpa<B,M,L,PL,LM>::run(NrpaLevel *nl, int level, const Policy &policy){
 
       if(i != _nbIter - 1)
 	nl->updatePolicy(); 
+    }
+  }
+  else{
+    
+    //  static ThreadPool t(maxThreads); 
+    //  static const int nbThreads = t.nbThreads(); 
+    //    NrpaLevel *subs = &_subs; 
+
+    static future<int> *res = new future<int>[_nbThreads];  // TODO FIX
+
+    for(int i = 0; i < _nbIter; i+= _nbThreads){
+      /* Run n thraeds */ 
+      for(int j = 0; j < _nbThreads; j++){
+	res[j] = _threadPool.submit([ this, nl, level, j ]() -> int {
+	    NrpaLevel *sub = &_subs[j]; 
+	    run(sub, level - 1, nl->levelPolicy); return 1; });
+      }
+
+
+      /* fetch the best rollout among all parallel runs (if any better than before) */ 
+      int best = -1; 
+      double bestScore = nl->bestRollout.score();// numeric_limits<double>::lowest(); 
+      for(int j = 0; j < _nbThreads; j++){
+      	res[j].wait();
+      	if(_subs[j].bestRollout.score() >= bestScore){
+      	  bestScore = _subs[j].bestRollout.score(); 
+      	  best = j;
+      	}
+      }
+      if(best >= 0){
+	nl->bestRollout = _subs[best].bestRollout; // TODO is this copy necessary
+	nl->legalMoveCodes = _subs[best].legalMoveCodes;
+      }
+
+      if(checkTimeout()) { return nl->bestRollout.score(); }
+
+      nl->updatePolicy( ALPHA * _nbThreads );
     }
   }
   return nl->bestRollout.score();
@@ -231,4 +256,12 @@ bool Nrpa<B,M,L,PL,LM>::checkTimeout(){
 template <typename B,typename M, int L, int PL, int LM>
 typename Nrpa<B,M,L,PL,LM>::NrpaLevel Nrpa<B,M,L,PL,LM>::_nrpa[L]; 
 
+template <typename B, typename M, int L, int PL, int LM>
+int Nrpa<B,M,L,PL,LM>::_nbThreads; 
+
+template <typename B, typename M, int L, int PL, int LM>
+ThreadPool Nrpa<B,M,L,PL,LM>::_threadPool; 
+
+template <typename B, typename M, int L, int PL, int LM>
+typename Nrpa<B,M,L,PL,LM>::NrpaLevel Nrpa<B,M,L,PL,LM>::_subs[100]; 
 

@@ -10,5 +10,3 @@ double minNorm = -0.1, maxNorm = 2.0;
 int SizeBeam [MaxLevel] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
 int levelPrint = 3; 
 int startLearning = 0;
-
-

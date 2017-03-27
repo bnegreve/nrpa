@@ -12,7 +12,7 @@
 
 #include "rollout.hpp"
 #include "policy.hpp"
-
+#include "threadpool.hpp"
 /* Old constants kepts for compatibility with old game file. Their
  * values are set to old defaults, they have no effect on the nrpa
  * algorithm, but they might have an impact on the old game code. 
@@ -33,11 +33,11 @@ public:
 
   static constexpr double ALPHA = 1.0; 
 
+  Nrpa(int maxThreads = 0);
   double run(int level = L - 1, int nbIter = 10, int timeout = -1); 
   void setTimeout(int sec);
-  bool checkTimeout(); 
 
-  static double test(int nbRun = 5, int level = L - 1, int nbIter = 10, int timeout = -1); 
+  static double test(int nbRun = 5, int level = L - 1, int nbIter = 10, int timeout = -1, int nbThreads = 0); 
 
 private:
   
@@ -56,11 +56,20 @@ private:
   }; 
 
   double run(NrpaLevel *nl, int level, const Policy &policy);     
+  bool checkTimeout(); 
 
-  static NrpaLevel _nrpa[L]; 
   int _nbIter; 
   atomic_bool _timeout; 
 
+  /* Data structures for simple, recursive calls */
+  static NrpaLevel _nrpa[L];
+
+  /* parallel calls */
+  static int _nbThreads; 
+  static ThreadPool _threadPool; 
+
+  /* Data structures for parallel calls */ 
+  static NrpaLevel _subs[100]; //TODO FIX
   
 }; 
 
