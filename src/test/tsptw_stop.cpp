@@ -296,11 +296,13 @@ int main (int argc, char *argv []) {
   /*   const char * output_instance = "AFG/rbg010a.tw.sol"; */
   /*   string input_instance =        "AFG/rbg010a.tw"; */
   
+  Options o = Options::parse(argc, argv); 
+  
   if (argc > 1) 
     input_instance = argv [1];
   
   Board::LoadInstance (input_instance);
-  Nrpa<Board, Move, 5, MaxPlayoutLength, MaxLegalMoves>::test(Options::parse(argc, argv));
+  Nrpa<Board, Move, 5, MaxPlayoutLength, MaxLegalMoves>::test(o);
 
   // //srand (time(NULL));
   // //testTimeNested (2);

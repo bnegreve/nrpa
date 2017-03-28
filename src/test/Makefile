@@ -35,7 +35,7 @@ deps: $(SRCS)
 	$(CXX) $(CXXFLAGS) -MM $^
 
 simple-test: $(TESTS) test_driver.sh
-	for i in $$(ls test-output/*-simple); do ./test_driver.sh $$i 2> /dev/null; done 
+	for i in $$(ls test-output/*-simple); do ./test_driver.sh $$i ; done 
 
 regen-test:
 	for i in $$(ls test-output/*-simple); do    \

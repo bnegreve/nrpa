@@ -8,6 +8,11 @@
 #include <unistd.h> //GETOPT
 #include <getopt.h>
 
+extern char *optarg;
+extern int optind, opterr, optopt;
+
+
+
 struct Options{
 
   int numRun = 4;
@@ -16,12 +21,12 @@ struct Options{
   int numThread = 0;
   int timeout = -1;
 
-  static Options parse(int &argc, char **argv); 
+  static Options parse(int &argc, char **&argv); 
   void print() const; 
 
 }; 
 
-inline Options Options::parse(int &argc, char **argv){
+inline Options Options::parse(int &argc, char **&argv){
   using namespace std; 
   Options o; 
   int c;
@@ -73,10 +78,14 @@ inline Options Options::parse(int &argc, char **argv){
 	  o.timeout = atoi(optarg); 
 	  break;
 	default:
-	  cout<<"blah"<<endl;
+	  cout<<"Unknown arg."<<endl;
+	  exit(1); 
 	}
     }
 
+  argc -= optind;
+  argv += optind; 
+  
   o.print();
   return o; 
 }
