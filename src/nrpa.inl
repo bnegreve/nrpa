@@ -111,8 +111,8 @@ double Nrpa<B,M,L,PL,LM>::runseq(NrpaLevel *nl, int level, const Policy &policy)
 	
       if (level > L - 3) {
 	for (int t = 0; t < level - 1; t++)
-	  fprintf (stderr, "\t");
-	fprintf(stderr,"Level : %d, N:%d, score : %f\n", level, i, nl->bestRollout.score());
+	  fprintf (stdout, "\t");
+	fprintf(stdout,"Level : %d, N:%d, score : %f\n", level, i, nl->bestRollout.score());
       }
     }
 
