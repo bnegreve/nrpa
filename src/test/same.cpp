@@ -811,7 +811,7 @@ int main(int argc, char *argv []) {
   }
   fprintf (stderr, "RAND_MAX = %d\n", RAND_MAX);
 
-  load (20, "problems.txt");
+  load (20, "data/same/problems.txt");
   for (int i = 0; i < MaxSize * MaxSize; i++)
     currentColor [i] = problem [pb].color [i];
   secondBest = 9;
