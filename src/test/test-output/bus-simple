@@ -1,0 +1,14 @@
+./bus -x 1 -l 3 -n 10
+== Options ==
+numRun = 4
+numLevel = 3
+numIter = 10
+numThread = 1
+timeout = -1
+== End of options ==
+Bestscore: -2006
+Bestscore: -1914
+Bestscore: -1975
+Bestscore: -2008
+Avgscore: -1975.75
+Bestscore-overall: -1914
