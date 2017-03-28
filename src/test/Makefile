@@ -18,7 +18,7 @@ SRCS= algebra.cpp \
 	same.cpp \
 	serieFinanciere.cpp \
 	tsptw.cpp \
-	tsptw-stop.cpp \
+	tsptw_stop.cpp \
 	ws.cpp
 
 TESTS= $(basename $(SRCS))
@@ -58,7 +58,7 @@ serieFinanciere.o: serieFinanciere.cpp ../nrpa.hpp ../rollout.hpp \
  ../rollout.inl ../policy.hpp ../threadpool.hpp ../cli.hpp ../nrpa.inl
 tsptw.o: tsptw.cpp ../nrpa.hpp ../rollout.hpp ../rollout.inl \
  ../policy.hpp ../threadpool.hpp ../cli.hpp ../nrpa.inl
-tsptw-stop.o: tsptw-stop.cpp ../nrpa.hpp ../rollout.hpp ../rollout.inl \
+tsptw_stop.o: tsptw_stop.cpp ../nrpa.hpp ../rollout.hpp ../rollout.inl \
  ../policy.hpp ../threadpool.hpp ../cli.hpp ../nrpa.inl
 ws.o: ws.cpp ../nrpa.hpp ../rollout.hpp ../rollout.inl ../policy.hpp \
  ../threadpool.hpp ../cli.hpp ../nrpa.inl
