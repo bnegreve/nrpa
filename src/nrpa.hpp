@@ -13,6 +13,8 @@
 #include "rollout.hpp"
 #include "policy.hpp"
 #include "threadpool.hpp"
+#include "cli.hpp"
+
 /* Old constants kepts for compatibility with old game file. Their
  * values are set to old defaults, they have no effect on the nrpa
  * algorithm, but they might have an impact on the old game code. 
@@ -34,11 +36,13 @@ public:
   static constexpr double ALPHA = 1.0; 
   static const int MAX_THREADS = 128; 
 
-
   Nrpa(int maxThreads = 0, int parLevel = 2);
   double run(int level = L - 1, int nbIter = 10, int timeout = -1); 
+  int parseArgs(int &argc, char **argv); 
+
   void setTimeout(int sec);
 
+  static double test(const Options &options); 
   static double test(int nbRun = 5, int level = L - 1, int nbIter = 10, int timeout = -1, int nbThreads = 0); 
 
 private:

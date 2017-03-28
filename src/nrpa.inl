@@ -2,6 +2,7 @@
 // Made by Benjamin Negrevergne 
 // Started on <2017-03-08 Wed>
 #include <limits>
+
 #include "threadpool.hpp"
 
 
@@ -35,8 +36,13 @@ double Nrpa<B,M,L,PL,LM>::run(int level, int nbIter, int timeout){
   if(timeout != -1) setTimeout(timeout);  // Warning: all these are static, so Nrpa should remain a singleton 
   _nbIter = nbIter; 
   double score =  run(&_nrpa[level], level, policy);
-  cout<<"Maxscore: "<<score<<endl;
+  cout<<"Bestscore: "<<score<<endl;
   return score; 
+}
+
+template <typename B,typename  M, int L, int PL, int LM>
+double Nrpa<B,M,L,PL,LM>::test(const Options &o){
+  return test(o.numRun, o.numLevel, o.numIter, o.timeout, o.numThread);
 }
 
 template <typename B,typename  M, int L, int PL, int LM>
@@ -51,7 +57,7 @@ double Nrpa<B,M,L,PL,LM>::test(int nbRun, int level, int nbIter, int timeout, in
     maxscore = max(maxscore,  score); 
   }
   cout<<"Avgscore: "<< avgscore / nbRun<<endl; 
-  cout<<"Maxscore overall: "<< maxscore <<endl; 
+  cout<<"Bestscore-overall: "<< maxscore <<endl; 
   return avgscore / nbRun; 
   
 }

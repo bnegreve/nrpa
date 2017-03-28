@@ -836,7 +836,8 @@ int main(int argc, char *argv []) {
   levelPrint = 4;
   saveHighScore = true;
 
-  Nrpa<Board, Move, 5, MaxPlayoutLength, MaxLegalMoves>::test(5, 4, 20, 10);
+  
+  Nrpa<Board, Move, 5, MaxPlayoutLength, MaxLegalMoves>::test(Options::parse(argc, argv));
 
   //  nrpa.test(2, 4, 5, 1); 
 
