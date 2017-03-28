@@ -87,7 +87,7 @@ double Nrpa<B,M,L,PL,LM>::runseq(NrpaLevel *nl, int level, const Policy &policy)
   nl->levelPolicy = policy; 
 
   /* sequential call */ 
-  NrpaLevel *sub = new NrpaLevel;
+  NrpaLevel *sub; 
   if(level > _parLevel)
     sub = &_nrpa[level -1];
   else
