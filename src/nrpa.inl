@@ -48,6 +48,8 @@ double Nrpa<B,M,L,PL,LM>::test(const Options &o){
 template <typename B,typename  M, int L, int PL, int LM>
 double Nrpa<B,M,L,PL,LM>::test(int nbRun, int level, int nbIter, int timeout, int nbThreads){
 
+  errorif(level >= L, "level should be lower than L template argument."); 
+
   double avgscore = 0;
   double maxscore = numeric_limits<double>::lowest(); 
   for(int i = 0; i < nbRun; i++){
@@ -291,6 +293,16 @@ bool Nrpa<B,M,L,PL,LM>::checkTimeout(){
 
   return false; 
 }
+
+
+template <typename B,typename M, int L, int PL, int LM>
+void Nrpa<B,M,L,PL,LM>::errorif(bool cond, const std::string &msg){
+  if(cond){
+    cerr<<"Error : "<<msg<<endl;
+    exit(1);
+  }
+}
+
 
 
 /* Instanciation of static NRPA structures */ 

@@ -66,7 +66,7 @@ private:
   double runseq(NrpaLevel *nl, int level, const Policy &policy);     
   double runpar(NrpaLevel *nl, int level, const Policy &policy);     
   bool checkTimeout(); 
-
+  static void errorif(bool cond, const std::string &msg = "unknown."); 
   int _nbIter; 
   atomic_bool _timeout; 
 
