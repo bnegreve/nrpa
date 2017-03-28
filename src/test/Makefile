@@ -1,21 +1,64 @@
-all: bus
-
 CXXFLAGS=-O3 -g -DNDEBUG -lpthread -I ../ -std=c++11
 #CXXFLAGS=-O0 --no-inline  -g -lpthread -std=c++11
 
-
-OBJS= ../nrpa.o 
-
-%.o: %.cpp %.hpp
-	$(CXX) $(CXXFLAGS) -o $@ -c $< 
+NRPA_DEPS=../nrpa.hpp ../rollout.hpp ../rollout.inl ../policy.hpp ../threadpool.hpp ../cli.hpp ../nrpa.inl
+NRPA_OBJS= ../nrpa.o 
 
 
-bus: bus.cpp
-	$(CXX) $(CXXFLAGS) -o $@ $< $(OBJS)
+
+
+
+SRCS= algebra.cpp \
+	bus.cpp \
+	formula.cpp \
+	maximum.cpp \
+	parity.cpp \
+	prime.cpp \
+	prisonners.cpp \
+	same.cpp \
+	serieFinanciere.cpp \
+	tsptw.cpp \
+	tsptw-stop.cpp \
+	ws.cpp
+
+TESTS= $(basename $(SRCS))
+
+all: $(TESTS)
+
+%: %.o $(NRPA_OBJS)
+	$(CXX) $(CXXFLAGS) -o $@ $^
+
+%.o: %.cpp $(NRPA_DEPS)
+	$(CXX) $(CXXFLAGS) -c -o $@ $<
+
+deps: $(SRCS)
+	$(CXX) $(CXXFLAGS) -MM $^
 
 clean:
-	rm -rf *.o same leftMove *~
+	rm -rf *.o *~ $(TESTS)
 
-# non trivial deps. 
-nrpa.o: nrpa.cpp nrpa.hpp rollout.hpp rollout.inl policy.hpp nrpa.inl threadpool.hpp
-bus.o: bus.cpp
+#deps: generated with make deps
+algebra.o: algebra.cpp ../nrpa.hpp ../rollout.hpp ../rollout.inl \
+ ../policy.hpp ../threadpool.hpp ../cli.hpp ../nrpa.inl
+bus.o: bus.cpp ../nrpa.hpp ../rollout.hpp ../rollout.inl ../policy.hpp \
+ ../threadpool.hpp ../cli.hpp ../nrpa.inl
+formula.o: formula.cpp ../nrpa.hpp ../rollout.hpp ../rollout.inl \
+ ../policy.hpp ../threadpool.hpp ../cli.hpp ../nrpa.inl
+maximum.o: maximum.cpp ../nrpa.hpp ../rollout.hpp ../rollout.inl \
+ ../policy.hpp ../threadpool.hpp ../cli.hpp ../nrpa.inl
+parity.o: parity.cpp ../nrpa.hpp ../rollout.hpp ../rollout.inl \
+ ../policy.hpp ../threadpool.hpp ../cli.hpp ../nrpa.inl
+prime.o: prime.cpp ../nrpa.hpp ../rollout.hpp ../rollout.inl \
+ ../policy.hpp ../threadpool.hpp ../cli.hpp ../nrpa.inl
+prisonners.o: prisonners.cpp ../nrpa.hpp ../rollout.hpp ../rollout.inl \
+ ../policy.hpp ../threadpool.hpp ../cli.hpp ../nrpa.inl
+same.o: same.cpp ../nrpa.hpp ../rollout.hpp ../rollout.inl ../policy.hpp \
+ ../threadpool.hpp ../cli.hpp ../nrpa.inl
+serieFinanciere.o: serieFinanciere.cpp ../nrpa.hpp ../rollout.hpp \
+ ../rollout.inl ../policy.hpp ../threadpool.hpp ../cli.hpp ../nrpa.inl
+tsptw.o: tsptw.cpp ../nrpa.hpp ../rollout.hpp ../rollout.inl \
+ ../policy.hpp ../threadpool.hpp ../cli.hpp ../nrpa.inl
+tsptw-stop.o: tsptw-stop.cpp ../nrpa.hpp ../rollout.hpp ../rollout.inl \
+ ../policy.hpp ../threadpool.hpp ../cli.hpp ../nrpa.inl
+ws.o: ws.cpp ../nrpa.hpp ../rollout.hpp ../rollout.inl ../policy.hpp \
+ ../threadpool.hpp ../cli.hpp ../nrpa.inl
