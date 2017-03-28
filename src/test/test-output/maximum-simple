@@ -1,0 +1,14 @@
+./maximum -x 1 -l 4 -n 6
+== Options ==
+numRun = 4
+numLevel = 4
+numIter = 6
+numThread = 1
+timeout = -1
+== End of options ==
+Bestscore: 3.77918e+06
+Bestscore: 1.41189e+07
+Bestscore: 6.95045e+06
+Bestscore: 1.72808e+06
+Avgscore: 6.64414e+06
+Bestscore-overall: 1.41189e+07

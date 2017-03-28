@@ -1,0 +1,14 @@
+./parity -x 1 -l 4 -n 7
+== Options ==
+numRun = 4
+numLevel = 4
+numIter = 7
+numThread = 1
+timeout = -1
+== End of options ==
+Bestscore: 34
+Bestscore: 34
+Bestscore: 34
+Bestscore: 33
+Avgscore: 33.75
+Bestscore-overall: 34

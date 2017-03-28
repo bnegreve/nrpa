@@ -1,0 +1,14 @@
+./prime -x 1 -l 4 -n 7
+== Options ==
+numRun = 4
+numLevel = 4
+numIter = 7
+numThread = 1
+timeout = -1
+== End of options ==
+Bestscore: 2
+Bestscore: 1
+Bestscore: 1
+Bestscore: 1
+Avgscore: 1.25
+Bestscore-overall: 2

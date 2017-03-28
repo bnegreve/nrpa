@@ -1,0 +1,14 @@
+./formula -x 1 -l 4 -n 7
+== Options ==
+numRun = 4
+numLevel = 4
+numIter = 7
+numThread = 1
+timeout = -1
+== End of options ==
+Bestscore: 9
+Bestscore: 9
+Bestscore: 9
+Bestscore: 263
+Avgscore: 72.5
+Bestscore-overall: 263

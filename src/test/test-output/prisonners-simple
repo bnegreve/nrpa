@@ -1,0 +1,14 @@
+./prisonners -x 1 -l 4 -n 7
+== Options ==
+numRun = 4
+numLevel = 4
+numIter = 7
+numThread = 1
+timeout = -1
+== End of options ==
+Bestscore: 35
+Bestscore: 36
+Bestscore: 35
+Bestscore: 35
+Avgscore: 35.25
+Bestscore-overall: 36

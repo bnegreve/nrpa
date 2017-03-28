@@ -1,0 +1,14 @@
+./algebra -x 1 -l 4 -n 7
+== Options ==
+numRun = 4
+numLevel = 4
+numIter = 7
+numThread = 1
+timeout = -1
+== End of options ==
+Bestscore: 21
+Bestscore: 21
+Bestscore: 21
+Bestscore: 21
+Avgscore: 21
+Bestscore-overall: 21
