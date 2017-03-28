@@ -6,9 +6,24 @@ numIter = 10
 numThread = 1
 timeout = -1
 == End of options ==
+		Level : 3, N:0, score : 1111.000000
 Bestscore: 1111
+		Level : 3, N:0, score : 758.000000
+		Level : 3, N:4, score : 948.000000
+		Level : 3, N:6, score : 1145.000000
 Bestscore: 1145
+		Level : 3, N:0, score : 609.000000
+		Level : 3, N:1, score : 637.000000
+		Level : 3, N:2, score : 657.000000
+		Level : 3, N:3, score : 667.000000
+		Level : 3, N:5, score : 823.000000
+		Level : 3, N:8, score : 900.000000
 Bestscore: 900
+		Level : 3, N:0, score : 450.000000
+		Level : 3, N:1, score : 835.000000
+		Level : 3, N:2, score : 840.000000
+		Level : 3, N:5, score : 961.000000
+		Level : 3, N:6, score : 1090.000000
 Bestscore: 1090
 Avgscore: 1061.5
 Bestscore-overall: 1145

@@ -34,6 +34,17 @@ all: $(TESTS)
 deps: $(SRCS)
 	$(CXX) $(CXXFLAGS) -MM $^
 
+simple-test: $(TESTS) test_driver.sh
+	for i in $$(ls test-output/*-simple); do ./test_driver.sh $$i 2> /dev/null; done 
+
+regen-test:
+	for i in $$(ls test-output/*-simple); do    \
+		COM=$$(head -q -n 1 $$i)           ;\
+		echo "Regenerating test with $$COM";\
+		./test_driver.sh -c $$i $$COM      ;\
+	done
+
+
 clean:
 	rm -rf *.o *~ $(TESTS)
 

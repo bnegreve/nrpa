@@ -6,9 +6,100 @@ numIter = 6
 numThread = 1
 timeout = -1
 == End of options ==
+		Level : 3, N:0, score : 8373.000000
+		Level : 3, N:1, score : 199332.000000
+		Level : 3, N:4, score : 589430.000000
+			Level : 4, N:0, score : 589430.000000
+		Level : 3, N:0, score : 7001.000000
+		Level : 3, N:1, score : 9780.000000
+		Level : 3, N:3, score : 21582.000000
+		Level : 3, N:4, score : 87703.000000
+		Level : 3, N:5, score : 125031.000000
+		Level : 3, N:0, score : 49047.000000
+		Level : 3, N:1, score : 69563.000000
+		Level : 3, N:2, score : 469848.000000
+		Level : 3, N:0, score : 32838.000000
+		Level : 3, N:1, score : 85686.000000
+		Level : 3, N:2, score : 199071.000000
+		Level : 3, N:0, score : 771222.000000
+		Level : 3, N:5, score : 3779176.000000
+			Level : 4, N:4, score : 3779176.000000
+		Level : 3, N:0, score : 102156.000000
+		Level : 3, N:2, score : 131340.000000
+		Level : 3, N:3, score : 573379.000000
 Bestscore: 3.77918e+06
+		Level : 3, N:0, score : 47598.000000
+		Level : 3, N:2, score : 564204.000000
+		Level : 3, N:4, score : 1005925.000000
+			Level : 4, N:0, score : 1005925.000000
+		Level : 3, N:0, score : 45088.000000
+		Level : 3, N:1, score : 82083.000000
+		Level : 3, N:2, score : 99121.000000
+		Level : 3, N:4, score : 114323.000000
+		Level : 3, N:5, score : 1785499.000000
+			Level : 4, N:1, score : 1785499.000000
+		Level : 3, N:0, score : 205493.000000
+		Level : 3, N:2, score : 305612.000000
+		Level : 3, N:3, score : 691545.000000
+		Level : 3, N:5, score : 1622170.000000
+		Level : 3, N:0, score : 807724.000000
+		Level : 3, N:2, score : 1536652.000000
+		Level : 3, N:3, score : 1824828.000000
+		Level : 3, N:4, score : 8067150.000000
+			Level : 4, N:3, score : 8067150.000000
+		Level : 3, N:0, score : 9813.000000
+		Level : 3, N:1, score : 1376634.000000
+		Level : 3, N:4, score : 1562907.000000
+		Level : 3, N:5, score : 14118856.000000
+			Level : 4, N:4, score : 14118856.000000
+		Level : 3, N:0, score : 24615.000000
+		Level : 3, N:1, score : 73092.000000
+		Level : 3, N:2, score : 1166392.000000
+		Level : 3, N:3, score : 5753496.000000
 Bestscore: 1.41189e+07
+		Level : 3, N:0, score : 37187.000000
+		Level : 3, N:3, score : 37811.000000
+		Level : 3, N:4, score : 93938.000000
+			Level : 4, N:0, score : 93938.000000
+		Level : 3, N:0, score : 42268.000000
+		Level : 3, N:2, score : 59362.000000
+		Level : 3, N:4, score : 87097.000000
+		Level : 3, N:5, score : 1836177.000000
+			Level : 4, N:1, score : 1836177.000000
+		Level : 3, N:0, score : 1203866.000000
+		Level : 3, N:0, score : 136555.000000
+		Level : 3, N:2, score : 373604.000000
+		Level : 3, N:5, score : 604095.000000
+		Level : 3, N:0, score : 653469.000000
+		Level : 3, N:4, score : 674033.000000
+		Level : 3, N:5, score : 968829.000000
+		Level : 3, N:0, score : 885573.000000
+		Level : 3, N:1, score : 1104069.000000
+		Level : 3, N:5, score : 6950450.000000
+			Level : 4, N:5, score : 6950450.000000
 Bestscore: 6.95045e+06
+		Level : 3, N:0, score : 5148.000000
+		Level : 3, N:2, score : 269772.000000
+			Level : 4, N:0, score : 269772.000000
+		Level : 3, N:0, score : 8697.000000
+		Level : 3, N:1, score : 8936.000000
+		Level : 3, N:3, score : 11286.000000
+		Level : 3, N:4, score : 67322.000000
+		Level : 3, N:5, score : 328697.000000
+			Level : 4, N:1, score : 328697.000000
+		Level : 3, N:0, score : 420738.000000
+			Level : 4, N:2, score : 420738.000000
+		Level : 3, N:0, score : 241598.000000
+		Level : 3, N:1, score : 417652.000000
+		Level : 3, N:2, score : 955412.000000
+		Level : 3, N:5, score : 1728082.000000
+			Level : 4, N:3, score : 1728082.000000
+		Level : 3, N:0, score : 407310.000000
+		Level : 3, N:3, score : 910769.000000
+		Level : 3, N:0, score : 45917.000000
+		Level : 3, N:1, score : 134677.000000
+		Level : 3, N:2, score : 357927.000000
+		Level : 3, N:4, score : 916524.000000
 Bestscore: 1.72808e+06
 Avgscore: 6.64414e+06
 Bestscore-overall: 1.41189e+07

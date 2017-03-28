@@ -1,8 +1,8 @@
+#!/bin/bash
+
 # test_driver.sh
 # Made by Benjamin Negrevergne 
 # Started on <2016-01-24 Sun>
-
-#!/bin/bash
 
 regexp=""
 sort=""
@@ -37,7 +37,8 @@ while [[ "$1" == \-* ]]; do
 				;;
 	-c | --create-test )    create_test=1
 	                        ;;
-        * )           echo -e $usage
+        * )           echo "Error: unexpected $1."
+		      echo -e $usage
                       exit 1
                       ;;
     esac
@@ -47,6 +48,7 @@ done
 # Deal with test creation 
 if [ ! -z $create_test ]; then
     if [ ! $# -gt 2 ]; then
+    echo "Error: unexpected number of arguments. (Expected at least 3, got $#.)" 
     echo -e $usage;
     exit 1;
     fi
