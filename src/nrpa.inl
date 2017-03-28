@@ -6,11 +6,12 @@
 
 
 template <typename B,typename  M, int L, int PL, int LM>
-Nrpa<B,M,L,PL,LM>::Nrpa(int maxThreads){
+Nrpa<B,M,L,PL,LM>::Nrpa(int maxThreads, int parLevel){
   assert(maxThreads < MAX_THREADS); 
 
   if(maxThreads == 1){
-    _nbThreads = 1; 
+    _nbThreads = 1;
+    _parLevel = 0; 
     /* Only one thread is nedded, we don't need to create the threadpool */ 
   }
   else{
@@ -20,6 +21,7 @@ Nrpa<B,M,L,PL,LM>::Nrpa(int maxThreads){
       else
 	_threadPool.init(maxThreads);
       _nbThreads = _threadPool.nbThreads(); 
+      _parLevel = parLevel; 
     }
   }
 }
@@ -64,7 +66,7 @@ double Nrpa<B,M,L,PL,LM>::run(NrpaLevel *nl, int level, const Policy &policy){
   if (level == 0) {
     score = nl->playout(policy); 
   }
-  else if(_nbThreads > 1 && level == 1){
+  else if(_nbThreads > 1 && level == _parLevel){
     score = runpar(nl, level, policy); 
   }
   else{
@@ -85,7 +87,12 @@ double Nrpa<B,M,L,PL,LM>::runseq(NrpaLevel *nl, int level, const Policy &policy)
   nl->levelPolicy = policy; 
 
   /* sequential call */ 
-  NrpaLevel *sub = &_nrpa[level -1]; 
+  NrpaLevel *sub = new NrpaLevel;
+  if(level > _parLevel)
+    sub = &_nrpa[level -1];
+  else
+    sub = new NrpaLevel;
+
 
   for(int i = 0; i < _nbIter; i++){
     double score = run(sub, level - 1, nl->levelPolicy); 
@@ -101,12 +108,16 @@ double Nrpa<B,M,L,PL,LM>::runseq(NrpaLevel *nl, int level, const Policy &policy)
       }
     }
 
-    if(checkTimeout()) { return nl->bestRollout.score(); }
+    if(checkTimeout()) { 
+      if( level <= _parLevel) delete sub; 
+      return nl->bestRollout.score(); 
+    }
 
     if(i != _nbIter - 1)
       nl->updatePolicy(); 
   }
   
+  if( level <= _parLevel) delete sub; 
   return nl->bestRollout.score();
 
 }
@@ -128,7 +139,7 @@ double Nrpa<B,M,L,PL,LM>::runpar(NrpaLevel *nl, int level, const Policy &policy)
     /* Run n thraeds */ 
     for(int j = 0; j < _nbThreads; j++){
       _subs[j].result = _threadPool.submit([ this, nl, level, j ]() -> int {
-	  NrpaLevel *sub = &_subs[j]; 
+	  NrpaLevel *sub = &_subs[j];
 	  run(sub, level - 1, nl->levelPolicy); return 1; });
     }
 
@@ -221,7 +232,7 @@ void Nrpa<B,M,L,PL,LM>::NrpaLevel::updatePolicy( double alpha ){
   //  assert(rollout.length() <= _nrpa[level].legalMoveCodes.size()); 
   using namespace std; 
 
-  static Policy newPol;
+  Policy newPol;
   int length = bestRollout.length(); 
 
   //  newPol = *levelPolicy; //complete copy is not necessary
@@ -282,6 +293,9 @@ typename Nrpa<B,M,L,PL,LM>::NrpaLevel Nrpa<B,M,L,PL,LM>::_nrpa[L];
 
 template <typename B, typename M, int L, int PL, int LM>
 int Nrpa<B,M,L,PL,LM>::_nbThreads; 
+
+template <typename B, typename M, int L, int PL, int LM>
+int Nrpa<B,M,L,PL,LM>::_parLevel; 
 
 template <typename B, typename M, int L, int PL, int LM>
 ThreadPool Nrpa<B,M,L,PL,LM>::_threadPool; 

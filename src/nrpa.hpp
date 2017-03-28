@@ -35,7 +35,7 @@ public:
   static const int MAX_THREADS = 128; 
 
 
-  Nrpa(int maxThreads = 0);
+  Nrpa(int maxThreads = 0, int parLevel = 2);
   double run(int level = L - 1, int nbIter = 10, int timeout = -1); 
   void setTimeout(int sec);
 
@@ -71,6 +71,7 @@ private:
 
   /* parallel calls */
   static int _nbThreads; 
+  static int _parLevel; 
   static ThreadPool _threadPool; 
 
   /* Data structures for parallel calls */ 
