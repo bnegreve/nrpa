@@ -8,6 +8,7 @@ regexp=""
 sort=""
 keep_output=""
 create_test=""
+quiet=""
 
 usage="Usage: $0 [-srkc] <test_file>\n
 Execute the command line on the first line and compare output with the rest of the file.\n
@@ -17,7 +18,8 @@ Options: \n
  -s: sort lines before comparing (with sort)\n
  -r <regexp>: filter out lines not matching regexp (with grep)\n
  -k: keep temporary files in case of failure\n
- -c: create test file instead. See 'Adding a test' section. \n\n
+ -c: create test file instead. See 'Adding a test' section. \n
+ -q: do not output program output (not even stderr). \n\n
 
 Adding a test:\n
   Usage: $0 -c [-sr] <test_file> <command> \n 
@@ -36,6 +38,8 @@ while [[ "$1" == \-* ]]; do
 				regexp=$1
 				;;
 	-c | --create-test )    create_test=1
+	                        ;;
+	-q | --quiet )          quiet=1
 	                        ;;
         * )           echo "Error: unexpected $1."
 		      echo -e $usage
@@ -127,11 +131,14 @@ if [ $? -ne 0 ] ; then
     exit 1
 fi
 
-$command > /tmp/test_out
-
+if [ -z $quiet ]; then
+    $command > /tmp/test_out 
+else
+    $command > /tmp/test_out 2> /dev/null
+fi
 
 if [ $? -ne 0 ] ; then
-    echo "$0: Error, Could not execute '$command'"
+    echo "$0: Error while executing '$command'"
     exit 1
 fi
 

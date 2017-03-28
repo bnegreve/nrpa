@@ -1,2 +1,2 @@
-./testtw -x 1 -l 3 -n 10
+./tsptw -x 1 -l 3 -n 10
 DUMMY
