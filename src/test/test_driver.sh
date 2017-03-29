@@ -9,8 +9,9 @@ sort=""
 keep_output=""
 create_test=""
 quiet=""
+runtime=""
 
-usage="Usage: $0 [-srkc] <test_file>\n
+usage="Usage: $0 [-srkctq] <test_file>\n
 Execute the command line on the first line and compare output with the rest of the file.\n
 Return with success if they are both identical.\n\n
 
@@ -18,7 +19,8 @@ Options: \n
  -s: sort lines before comparing (with sort)\n
  -r <regexp>: filter out lines not matching regexp (with grep)\n
  -k: keep temporary files in case of failure\n
- -c: create test file instead. See 'Adding a test' section. \n
+ -c: create test file instead. See 'Adding a test' section\n
+ -t: measure test execution time as well\n
  -q: do not output program output (not even stderr). \n\n
 
 Adding a test:\n
@@ -37,6 +39,8 @@ while [[ "$1" == \-* ]]; do
 	-r | --grep )           shift
 				regexp=$1
 				;;
+	-t | --check-runtime )  runtime=1
+	                        ;;
 	-c | --create-test )    create_test=1
 	                        ;;
 	-q | --quiet )          quiet=1
@@ -60,7 +64,17 @@ if [ ! -z $create_test ]; then
     test_file=$1
     shift 
     command=$*
-    $command > /tmp/ref_out
+    
+    if [ ! -z runtime ]; then
+	# The following commands run the command in $command,
+	# redirects, program stdout to ref_out, program stderr to
+	# stdout and time stderr to tmp
+	TIMEFORMAT="%E"
+	{ time { $command 2>&1 1>/tmp/ref_out;  }; } 2> /tmp/ref_out.time
+    else
+	$command > /tmp/ref_out
+    fi
+    
 
     echo "$0: Note, creating test file '$test_file' with command '$command'." 
 
@@ -92,6 +106,7 @@ if [ ! -z $create_test ]; then
 
     echo $command > $test_file
     cat /tmp/ref_out >> $test_file
+    mv /tmp/ref_out.time $test_file.time
 
     rm -f /tmp/ref_out 
     
@@ -118,7 +133,7 @@ test_file=$1
 # extract first line
 command=$(head -q -n 1 $test_file)
 if [ $? -ne 0 ] ; then
-    echo "$0: Error, Could not extract first line of '$test_file'"
+    echo "$0: Error, could not extract first line of '$test_file'"
     exit 1
 else
     echo "Test command is: $command"
@@ -131,11 +146,35 @@ if [ $? -ne 0 ] ; then
     exit 1
 fi
 
-if [ -z $quiet ]; then
-    $command > /tmp/test_out 
+if [ -f "$test_file.time" ]; then
+    runtime=1;
 else
-    $command > /tmp/test_out 2> /dev/null
+    if [ -z $runtime ]; then
+	echo "$0: Warning, no timing data for '$test_file' (i.e. there should be a '$test_file.time' in the same directory.)"
+    fi
 fi
+
+	 
+
+
+if [ ! -z runtime ]; then
+    # The following commands run the command in $command,
+    # redirects, program stdout to ref_out, program stderr to
+    # stdout and time stderr to tmp
+    TIMEFORMAT="%E"
+    if [ ! -z $quiet ]; then
+	{ time { $command 2>/dev/null 1>/tmp/test_out;  }; } 2> /tmp/test_out.time
+    else
+	{ time { $command 2>&1 1>/tmp/test_out;  }; } 2> /tmp/test_out.time
+    fi
+else
+    if [ ! -z $quiet ]; then
+	$command > /tmp/test_out 2> /dev/null
+    else
+	$command > /tmp/test_out 
+    fi
+fi
+
 
 if [ $? -ne 0 ] ; then
     echo "$0: Error while executing '$command'"
@@ -172,6 +211,12 @@ test_res=$?
 
 if [ $test_res -eq 0 ]; then
     echo "$0: SUCCESS." >&2
+    if [ ! -z $runtime ]; then
+	echo -n "Original run time : "
+	cat $test_file.time
+	echo -n "This run time : "
+	cat /tmp/test_out.time
+    fi
 else
     echo "$0: FAILURE. (Use -k switch to keep test output files)" >&2
 fi
