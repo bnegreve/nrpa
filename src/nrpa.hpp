@@ -62,7 +62,8 @@ public:
   void setTimeout(int sec);
 
   static double test(const Options &options); 
-  static double test(int nbRun = 5, int level = L - 1, int nbIter = 10, int timeout = -1, int nbThreads = 0); 
+  static double test(int nbRun = 5, int level = L - 1, int nbIter = 10,
+		     int timeout = -1, int nbThreads = 0); 
 
 private:
   

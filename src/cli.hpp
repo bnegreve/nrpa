@@ -4,6 +4,7 @@
 
 #ifndef CLI_HPP
 #define CLI_HPP
+#include <string>
 
 #include <unistd.h> //GETOPT
 #include <getopt.h>
@@ -20,6 +21,8 @@ struct Options{
   int numIter = 10;
   int numThread = 0;
   int timeout = -1;
+  int stats = 0; 
+  std::string tag = ""; // name for this run, will be used to generate trace data file 
 
   static Options parse(int &argc, char **&argv); 
   void print() const; 
@@ -40,11 +43,12 @@ inline Options Options::parse(int &argc, char **&argv){
 	  {"num-iter",   required_argument,       0, 'n'},
 	  {"num-thread",    required_argument,       0, 'x'},
 	  {"timeout",    required_argument,       0, 't'},
+	  {"stats",    optional_argument,       0, 's'},
 	  {0, 0, 0, 0}
 	};
 
       int option_index = 0;
-      c = getopt_long (argc, argv, "r:l:n:x:t:",
+      c = getopt_long (argc, argv, "r:l:n:x:t:s:",
 		       long_options, &option_index);
      
       /* Detect the end of the options. */
@@ -76,6 +80,11 @@ inline Options Options::parse(int &argc, char **&argv){
 	  break;
 	case 't':
 	  o.timeout = atoi(optarg); 
+	  break;
+	case 's':
+	  o.stats = 1;
+	  if(optarg)
+	    o.tag = optarg; 
 	  break;
 	default:
 	  cout<<"Unknown arg."<<endl;

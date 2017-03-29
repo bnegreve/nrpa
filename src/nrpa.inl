@@ -49,53 +49,69 @@ double Nrpa<B,M,L,PL,LM>::run(int level, int nbIter, int timeout){
 
 template <typename B,typename  M, int L, int PL, int LM>
 double Nrpa<B,M,L,PL,LM>::test(const Options &o){
-  return test(o.numRun, o.numLevel, o.numIter, o.timeout, o.numThread);
-}
 
-template <typename B,typename  M, int L, int PL, int LM>
-double Nrpa<B,M,L,PL,LM>::test(int nbRun, int level, int nbIter, int timeout, int nbThreads){
+  int nbRun = o.numRun;
+  int nbIter = o.numIter;
+  int timeout = o.timeout;
+  int nbThreads = o.numThread;
+  int level = o.numLevel;
 
   errorif(level >= L, "level should be lower than L template argument."); 
-
+  
   double avgscore = 0;
   double maxscore = numeric_limits<double>::lowest(); 
 
+  std::vector<NrpaStats[MAX_ITER]> stats(o.numRun);
 
-  std::vector<NrpaStats[MAX_ITER]> stats(nbRun);
-  
-
-  for(int i = 0; i < nbRun; i++){
+  for(int i = 0; i < o.numRun; i++){
     Nrpa<B,M,L,PL,LM> nrpa(nbThreads); 
     double score = nrpa.run(level, nbIter, timeout);
     avgscore += score;
     maxscore = max(maxscore,  score); 
-    copy(nrpa._stats, nrpa._stats + nbIter, stats[i]);
+
+    if(o.stats)
+      copy(nrpa._stats, nrpa._stats + nbIter, stats[i]);
   }
+  
+  if(o.stats){
+    /* TODO: move into a separate function */
+    fstream fs;
+    ostringstream filename;
+    filename<< "plots/dat/nrpa_stats";
+    filename<<"_nbRun."<<nbRun;
+    filename<<"_level."<<level;
+    filename<<"_nbIter."<<nbIter;
+    filename<<"_timeout."<<timeout;
+    filename<<"_nbThreads."<<nbThreads;
+    filename<<".dat";
+    if(o.tag != "")
+      filename<<"."<<o.tag;
 
-  fstream fs;
-  ostringstream filename;
-  filename<< "plots/dat/nrpa_stats";
-  filename<<"_nbRun."<<nbRun;
-  filename<<"_level."<<level;
-  filename<<"_nbIter."<<nbIter;
-  filename<<"_timeout."<<timeout;
-  filename<<"_nbThreads."<<nbThreads;
-  filename<<".dat"; 
-
-  fs.open(filename.str(), fstream::out);
-  fs<<"# nbRun "<<nbRun<<" level "<<level<<" nbIter "<<nbIter<<" timeout "<<timeout<<" nbThreads "<<nbThreads<<endl;
-  for(int i = 0; i < nbRun; i++){
-    for(int j = 0; j < nbIter; j++){
-      NrpaStats &s = stats[i][j]; 
-      fs<<j<<" "<<s.date<<" "<<s.bestScore<<" "<<"\n";
+    fs.open(filename.str(), fstream::out);
+    fs<<"# nbRun "<<nbRun<<" level "<<level<<" nbIter "<<nbIter<<" timeout "<<timeout<<" nbThreads "<<nbThreads<<endl;
+    for(int i = 0; i < nbRun; i++){
+      for(int j = 0; j < nbIter; j++){
+	NrpaStats &s = stats[i][j]; 
+	fs<<j<<" "<<s.date<<" "<<s.bestScore<<" "<<"\n";
+      }
     }
+    fs.close(); 
   }
-  fs.close(); 
 
   cout<<"Avgscore: "<< avgscore / nbRun<<endl; 
   cout<<"Bestscore-overall: "<< maxscore <<endl; 
   return avgscore / nbRun; 
-  
+}
+
+template <typename B,typename  M, int L, int PL, int LM>
+double Nrpa<B,M,L,PL,LM>::test(int nbRun, int level, int nbIter, int timeout, int nbThreads){
+  Options o;
+  o.numRun = nbRun;
+  o.numLevel = level;
+  o.numIter = nbIter;
+  o.timeout = timeout;
+  o.numThread = nbThreads;
+  test(o); 
 }
 
 template <typename B,typename  M, int L, int PL, int LM>
