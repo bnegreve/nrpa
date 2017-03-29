@@ -133,7 +133,7 @@ test_file=$1
 # extract first line
 command=$(head -q -n 1 $test_file)
 if [ $? -ne 0 ] ; then
-    echo "$0: Error, could not extract first line of '$test_file'"
+    echo "$0: Error, could not extract first line of '$test_file'" >&2
     exit 1
 else
     echo "Test command is: $command"
@@ -142,7 +142,7 @@ fi
 # extract rest 
 tail -n +2 $test_file > /tmp/ref_out
 if [ $? -ne 0 ] ; then
-    echo "$0: Error, could not extract expected output from '$test_file'"
+    echo "$0: Error, could not extract expected output from '$test_file'" >&2
     exit 1
 fi
 
@@ -150,7 +150,7 @@ if [ -f "$test_file.time" ]; then
     runtime=1;
 else
     if [ -z $runtime ]; then
-	echo "$0: Warning, no timing data for '$test_file' (i.e. there should be a '$test_file.time' in the same directory.)"
+	echo "$0: Warning, no timing data for '$test_file' (i.e. there should be a '$test_file.time' in the same directory.)" >&2
     fi
 fi
 
@@ -177,7 +177,9 @@ fi
 
 
 if [ $? -ne 0 ] ; then
-    echo "$0: Error while executing '$command'"
+    echo "$0: Error while executing '$command'" >&2
+    echo "$0: $test_file: FAILURE. (Use -k switch to keep test output files.)" 
+    echo "$0: Note: Test has returned non-zero value."
     exit 1
 fi
 
@@ -205,12 +207,14 @@ if [ $(wc -l /tmp/ref_out | cut -d ' ' -f 1) -eq 0 ] ; then
     echo "$0: Warning, ref output is empty." >&2
 fi
 
-diff -Zy --suppress-common-lines  /tmp/ref_out /tmp/test_out
+
+diff -Zy --suppress-common-lines  /tmp/ref_out /tmp/test_out > /tmp/diff_out
+
 
 test_res=$?
 
 if [ $test_res -eq 0 ]; then
-    echo "$0: SUCCESS." >&2
+    echo "$0: $test_file: SUCCESS." >&2
     if [ ! -z $runtime ]; then
 	echo -n "Original run time : "
 	cat $test_file.time
@@ -218,14 +222,19 @@ if [ $test_res -eq 0 ]; then
 	cat /tmp/test_out.time
     fi
 else
-    echo "$0: FAILURE. (Use -k switch to keep test output files)" >&2
+    echo "$0: $test_file: FAILURE. (Use -k switch to keep test output files)." 
+    echo "$0: Note: Test output does not match the expected output." 
+    echo "== Diff between expected output and actual output ==" 
+    cat /tmp/diff_out 
+    echo "" 
+    echo "== End of diff ==" 
 fi
 
 
 if [ -z $keep_output ]; then
-    rm -f /tmp/ref_out /tmp/test_out
+    rm -f /tmp/ref_out /tmp/test_out /tmp/tmp/diff_out
 else
-    echo "$0: Note, output file /tmp/ref_out and /tmp/test_out were kept." >&2
+    echo "$0: Note, output file /tmp/ref_out and /tmp/test_out were kept." 
 fi
 
 exit $test_res

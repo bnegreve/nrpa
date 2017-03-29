@@ -38,10 +38,10 @@ simple-test: $(TESTS) test_driver.sh
 	for i in $$(ls test-output/*-simple); do ./test_driver.sh -q $$i ; done 
 
 regen-test:
-	for i in $$(ls test-output/*-simple); do    \
+	@for i in $$(ls test-output/*-simple); do    \
 		COM=$$(head -q -n 1 $$i)           ;\
 		echo "Regenerating test with $$COM";\
-		./test_driver.sh -c $$i $$COM      ;\
+		./test_driver.sh -c -t $$i $$COM      ;\
 	done
 
 
