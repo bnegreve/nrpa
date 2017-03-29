@@ -28,7 +28,23 @@ extern int SizeBeam [];
 extern int levelPrint; 
 extern int startLearning;
 
-
+/* 
+ * Main class for the Nrpa algorith. 
+ *
+ * Warning: You may create multiple instance of this class (with
+ * different parameters), but only one instance can run at a time.
+ * (i.e., no parallel calls to Nrpa::run() or Nrpa::test() is allowed)
+ * 
+ * Here is how to run a Nrpa with all the defaults: 
+ * Nrpa<Board, Move, 5, MaxPlayoutLength, MaxLegalMoves>::test(Options::parse(argc, argv));
+ *
+ * Template arguments: 
+ * B = Board class
+ * M = Move class 
+ * L = Max level 
+ * PL = Playout maximum length (in nb moves) 
+ * LM = Maximum number of legal moves for each turn 
+ */ 
 template <typename B, typename M, int L, int PL, int LM>
 class Nrpa {
 public: 
