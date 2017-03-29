@@ -9,6 +9,7 @@
 #include <cmath>
 #include <limits>
 #include <atomic>
+#include <time.h>
 
 #include "rollout.hpp"
 #include "policy.hpp"
@@ -50,7 +51,9 @@ class Nrpa {
 public: 
 
   static constexpr double ALPHA = 1.0; 
+
   static const int MAX_THREADS = 128; 
+  static const int MAX_ITER = 128; 
 
   Nrpa(int maxThreads = 0, int parLevel = 2);
   double run(int level = L - 1, int nbIter = 10, int timeout = -1); 
@@ -78,13 +81,27 @@ private:
 
   }; 
 
+  struct NrpaStats{
+    NrpaStats(); 
+    void prettyPrint(); 
+    void record(std::ostream &os); 
+
+    double bestScore;
+    float date; 
+  }; 
+
   double run(NrpaLevel *nl, int level, const Policy &policy);
   double runseq(NrpaLevel *nl, int level, const Policy &policy);     
   double runpar(NrpaLevel *nl, int level, const Policy &policy);     
+
   bool checkTimeout(); 
+  void recordStats(int iter, const NrpaLevel &nl); 
+
   static void errorif(bool cond, const std::string &msg = "unknown."); 
+  int _startLevel; 
   int _nbIter; 
   atomic_bool _timeout; 
+  clock_t _startTime; 
 
   /* Data structures for simple, recursive calls */
   static NrpaLevel _nrpa[L];
@@ -96,6 +113,9 @@ private:
 
   /* Data structures for parallel calls */ 
   static NrpaLevel _subs[MAX_THREADS]; 
+
+  /* stats */
+  static NrpaStats _stats[MAX_ITER]; 
   
 }; 
 

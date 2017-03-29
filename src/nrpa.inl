@@ -2,7 +2,8 @@
 // Made by Benjamin Negrevergne 
 // Started on <2017-03-08 Wed>
 #include <limits>
-
+#include <algorithm>
+#include <sstream> 
 #include "threadpool.hpp"
 
 
@@ -30,13 +31,19 @@ Nrpa<B,M,L,PL,LM>::Nrpa(int maxThreads, int parLevel){
 template <typename B,typename  M, int L, int PL, int LM>
 double Nrpa<B,M,L,PL,LM>::run(int level, int nbIter, int timeout){
   assert(level < L); 
+  assert(nbIter < MAX_ITER); 
+
   Policy policy; 
   _timeout = false; 
+  _startLevel = level; 
+  fill_n(_stats, MAX_ITER, NrpaStats()); // reset stats
+  _startTime = clock(); 
 
   if(timeout != -1) setTimeout(timeout);  // Warning: all these are static, so Nrpa should remain a singleton 
   _nbIter = nbIter; 
   double score =  run(&_nrpa[level], level, policy);
   cout<<"Bestscore: "<<score<<endl;
+  
   return score; 
 }
 
@@ -52,12 +59,39 @@ double Nrpa<B,M,L,PL,LM>::test(int nbRun, int level, int nbIter, int timeout, in
 
   double avgscore = 0;
   double maxscore = numeric_limits<double>::lowest(); 
+
+
+  std::vector<NrpaStats[MAX_ITER]> stats(nbRun);
+  
+
   for(int i = 0; i < nbRun; i++){
     Nrpa<B,M,L,PL,LM> nrpa(nbThreads); 
     double score = nrpa.run(level, nbIter, timeout);
     avgscore += score;
     maxscore = max(maxscore,  score); 
+    copy(nrpa._stats, nrpa._stats + nbIter, stats[i]);
   }
+
+  fstream fs;
+  ostringstream filename;
+  filename<< "plots/dat/nrpa_stats";
+  filename<<"_nbRun."<<nbRun;
+  filename<<"_level."<<level;
+  filename<<"_nbIter."<<nbIter;
+  filename<<"_timeout."<<timeout;
+  filename<<"_nbThreads."<<nbThreads;
+  filename<<".dat"; 
+
+  fs.open(filename.str(), fstream::out);
+  fs<<"# nbRun "<<nbRun<<" level "<<level<<" nbIter "<<nbIter<<" timeout "<<timeout<<" nbThreads "<<nbThreads<<endl;
+  for(int i = 0; i < nbRun; i++){
+    for(int j = 0; j < nbIter; j++){
+      NrpaStats &s = stats[i][j]; 
+      fs<<j<<" "<<s.date<<" "<<s.bestScore<<" "<<"\n";
+    }
+  }
+  fs.close(); 
+
   cout<<"Avgscore: "<< avgscore / nbRun<<endl; 
   cout<<"Bestscore-overall: "<< maxscore <<endl; 
   return avgscore / nbRun; 
@@ -116,6 +150,9 @@ double Nrpa<B,M,L,PL,LM>::runseq(NrpaLevel *nl, int level, const Policy &policy)
       }
     }
 
+    if(level == _startLevel){
+      recordStats(i, *nl); 
+    }
     if(checkTimeout()) { 
       if( level <= _parLevel) delete sub; 
       return nl->bestRollout.score(); 
@@ -126,6 +163,7 @@ double Nrpa<B,M,L,PL,LM>::runseq(NrpaLevel *nl, int level, const Policy &policy)
   }
   
   if( level <= _parLevel) delete sub; 
+
   return nl->bestRollout.score();
 
 }
@@ -276,6 +314,29 @@ void Nrpa<B,M,L,PL,LM>::NrpaLevel::updatePolicy( double alpha ){
 }
 
 template <typename B,typename M, int L, int PL, int LM>
+Nrpa<B,M,L,PL,LM>::NrpaStats::NrpaStats(): bestScore(numeric_limits<double>::lowest()),
+					   date(0){}
+
+template <typename B,typename M, int L, int PL, int LM>
+void Nrpa<B,M,L,PL,LM>::NrpaStats::prettyPrint(){
+  cout<<"score: "<<bestScore<<"\n";
+  cout<<"date: "<<date<<"\n";
+}
+
+template <typename B,typename M, int L, int PL, int LM>
+void Nrpa<B,M,L,PL,LM>::NrpaStats::record(std::ostream &os){
+  //  os<<"# nbIter = "<<_nbIter<<", #nbThreads = "<<_nbThreads<<" level "<<_startLevel<<"\n"; 
+  os<<date<<" "<<bestScore<<" ";
+}
+
+
+template <typename B,typename M, int L, int PL, int LM>
+void Nrpa<B,M,L,PL,LM>::recordStats(int iter, const NrpaLevel &nl){
+  _stats[iter].bestScore = nl.bestRollout.score(); 
+  _stats[iter].date =  static_cast<float>(clock() - _startTime) / CLOCKS_PER_SEC; 
+}
+
+template <typename B,typename M, int L, int PL, int LM>
 void Nrpa<B,M,L,PL,LM>::setTimeout(int sec){
   thread t([sec, this] { 
       sleep(sec);
@@ -320,4 +381,8 @@ ThreadPool Nrpa<B,M,L,PL,LM>::_threadPool;
 
 template <typename B, typename M, int L, int PL, int LM>
 typename Nrpa<B,M,L,PL,LM>::NrpaLevel Nrpa<B,M,L,PL,LM>::_subs[MAX_THREADS]; 
+
+template <typename B, typename M, int L, int PL, int LM>
+typename Nrpa<B,M,L,PL,LM>::NrpaStats Nrpa<B,M,L,PL,LM>::_stats[MAX_ITER]; 
+
 
