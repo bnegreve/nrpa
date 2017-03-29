@@ -1,2 +1,9 @@
 ./tsptw -x 1 -l 3 -n 10
-DUMMY
+== Options ==
+numRun = 4
+numLevel = 3
+numIter = 10
+numThread = 1
+timeout = -1
+== End of options ==
+error: file SolomonPotvinBengio/rc_204.1.txt could not be opened
