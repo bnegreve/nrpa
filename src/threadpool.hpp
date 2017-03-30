@@ -7,6 +7,8 @@
 #include <queue>
 #include <iostream>
 #include <cassert> 
+#include <time.h>
+#include <chrono>
 
 //#define _GNU_SOURCE             /* See feature_test_macros(7) */
 #include <sched.h>
@@ -23,10 +25,18 @@ class ThreadPool{
   int _nbThreads; 
   mutex _mutex;
   thread *_threads[MAX_THREADS]; 
+  int _numTasks[MAX_THREADS] = {0}; 
+
+  /* clock */ 
+  typedef chrono::high_resolution_clock clock; 
+  clock::time_point _startTime;
+  clock::duration _workTime[MAX_THREADS]; 
+
+  bool _threadStats; 
+
 
   inline void workerThread(int id) {
-
-    bindThread(id); 
+    //    bindThread(id); 
 
     while(!_done) {         
       FunctionType f; 
@@ -44,16 +54,26 @@ class ThreadPool{
       _mutex.unlock(); 
 
       if(gotSomething){
+	clock::time_point start; 
+	if(_threadStats){ _numTasks[id]++; start = clock::now(); }
+
 	int ret = f();
 	p->set_value( ret ) ; 
+	
+	if(_threadStats) _workTime[id] += clock::now() - start; 
+
 	delete p; 
       }
       else {
-	this_thread::yield();
+	yield(); 
       }
     }
   }
 
+
+  inline void yield(){
+    this_thread::yield();
+  }
 
 public:
   /* Done set to true initially, must call init() */ 
@@ -61,6 +81,7 @@ public:
 
   inline ~ThreadPool(){
     end();
+    printStats(); 
   }
 
 
@@ -73,9 +94,13 @@ public:
     return res;  
   }
 
-  inline void init(int nbThreads = thread::hardware_concurrency()){
+  inline void init(int nbThreads = thread::hardware_concurrency(), bool threadStats = false){
     assert(nbThreads <= MAX_THREADS); 
     _nbThreads = nbThreads; 
+    _threadStats = threadStats; 
+    _startTime = clock::now(); 
+    fill_n(_workTime, _nbThreads, clock::duration::zero()); 
+
     cout<<"Initializing thread pool with "<<_nbThreads<<" thread(s)."<<endl; 
     _done = false; 
  
@@ -98,6 +123,19 @@ public:
 	delete _threads[i]; 
       }
     }
+  }
+
+  inline void printStats(){
+    clock::duration totalDuration = clock::now() - _startTime; 
+    if(_threadStats){
+      for(int i = 0; i < _nbThreads; i++){
+	cout<<"Thread "<<i<<" has completed "<<_numTasks[i]<<" task(s) and worked for "
+	    <<chrono::duration_cast<chrono::milliseconds>(_workTime[i]).count() / 1000.f<<"sec. ("
+	    <<(static_cast<float>(_workTime[i].count()) / totalDuration.count()) * 100<<"% of the time.)\n"; 
+      }
+    }
+    cout<<"Total duration: "<<
+      chrono::duration_cast<chrono::milliseconds>(totalDuration).count() / 1000.f<<"s"<<endl;
   }
 
   inline int nbThreads() const { assert(_nbThreads != -1);  return _nbThreads; }

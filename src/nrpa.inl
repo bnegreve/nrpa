@@ -8,7 +8,7 @@
 
 
 template <typename B,typename  M, int L, int PL, int LM>
-Nrpa<B,M,L,PL,LM>::Nrpa(int maxThreads, int parLevel){
+Nrpa<B,M,L,PL,LM>::Nrpa(int maxThreads, int parLevel, bool threadStats){
   assert(maxThreads < MAX_THREADS); 
 
   if(maxThreads == 1){
@@ -19,9 +19,9 @@ Nrpa<B,M,L,PL,LM>::Nrpa(int maxThreads, int parLevel){
   else{
     if( ! _threadPool.initialized() ){
       if(maxThreads == 0)
-	_threadPool.init();
+	_threadPool.init(maxThreads, threadStats);
       else
-	_threadPool.init(maxThreads);
+	_threadPool.init(maxThreads, threadStats);
       _nbThreads = _threadPool.nbThreads(); 
       _parLevel = parLevel; 
     }
@@ -65,7 +65,7 @@ double Nrpa<B,M,L,PL,LM>::test(const Options &o){
   std::vector<NrpaStats[MAX_ITER]> stats(o.numRun);
 
   for(int i = 0; i < o.numRun; i++){
-    Nrpa<B,M,L,PL,LM> nrpa(nbThreads, parLevel); 
+    Nrpa<B,M,L,PL,LM> nrpa(nbThreads, parLevel, o.threadStats); 
     double score = nrpa.run(level, nbIter, timeout);
     avgscore += score;
     maxscore = max(maxscore,  score); 

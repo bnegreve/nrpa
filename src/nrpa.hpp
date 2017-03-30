@@ -55,14 +55,19 @@ public:
   static const int MAX_THREADS = 128; 
   static const int MAX_ITER = 128; 
 
-  Nrpa(int maxThreads = 0, int parLevel = 1);
+  Nrpa(int maxThreads = 0, int parLevel = 1, bool threadStats = false);
+
+  /* One nrpa run */
   double run(int level = L - 1, int nbIter = 10, int timeout = -1); 
 
-  void setTimeout(int sec);
-
+  /* Nrpa testing methods, (make multiple runs, collect statstics etc */
+  /* Options is described in cli.hpp */ 
   static double test(const Options &options); 
   static double test(int nbRun = 5, int level = L - 1, int nbIter = 10,
 		     int timeout = -1, int nbThreads = 0); 
+
+  void setTimeout(int sec);
+
 
 private:
   
