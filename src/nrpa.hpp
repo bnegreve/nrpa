@@ -55,9 +55,8 @@ public:
   static const int MAX_THREADS = 128; 
   static const int MAX_ITER = 128; 
 
-  Nrpa(int maxThreads = 0, int parLevel = 2);
+  Nrpa(int maxThreads = 0, int parLevel = 1);
   double run(int level = L - 1, int nbIter = 10, int timeout = -1); 
-  int parseArgs(int &argc, char **argv); 
 
   void setTimeout(int sec);
 

@@ -55,6 +55,7 @@ double Nrpa<B,M,L,PL,LM>::test(const Options &o){
   int timeout = o.timeout;
   int nbThreads = o.numThread;
   int level = o.numLevel;
+  int parLevel = o.parallelLevel; 
 
   errorif(level >= L, "level should be lower than L template argument."); 
   
@@ -64,7 +65,7 @@ double Nrpa<B,M,L,PL,LM>::test(const Options &o){
   std::vector<NrpaStats[MAX_ITER]> stats(o.numRun);
 
   for(int i = 0; i < o.numRun; i++){
-    Nrpa<B,M,L,PL,LM> nrpa(nbThreads); 
+    Nrpa<B,M,L,PL,LM> nrpa(nbThreads, parLevel); 
     double score = nrpa.run(level, nbIter, timeout);
     avgscore += score;
     maxscore = max(maxscore,  score); 

@@ -23,6 +23,7 @@ struct Options{
   int timeout = -1;
   int stats = 0; 
   std::string tag = ""; // name for this run, will be used to generate trace data file 
+  int parallelLevel = 1; 
 
   static Options parse(int &argc, char **&argv); 
   void print() const; 
@@ -44,11 +45,12 @@ inline Options Options::parse(int &argc, char **&argv){
 	  {"num-thread",    required_argument,       0, 'x'},
 	  {"timeout",    required_argument,       0, 't'},
 	  {"stats",    optional_argument,       0, 's'},
+	  {"parallel-level", required_argument, 0, 'p'}, 
 	  {0, 0, 0, 0}
 	};
 
       int option_index = 0;
-      c = getopt_long (argc, argv, "r:l:n:x:t:s:",
+      c = getopt_long (argc, argv, "r:l:n:x:t:s:p:",
 		       long_options, &option_index);
      
       /* Detect the end of the options. */
@@ -85,6 +87,9 @@ inline Options Options::parse(int &argc, char **&argv){
 	  o.stats = 1;
 	  if(optarg)
 	    o.tag = optarg; 
+	  break;
+	case 'p':
+	  o.parallelLevel = atoi(optarg); 
 	  break;
 	default:
 	  cout<<"Unknown arg."<<endl;
