@@ -60,14 +60,8 @@ double Nrpa<B,M,L,PL,LM>::test(const Options &o){
   double avgscore = 0;
   double maxscore = numeric_limits<double>::lowest(); 
 
-  // std::vector<NrpaStats[MAX_ITER]> iterStats(o.numRun);
-  // std::vector<NrpaStats[MAX_TIME_EVENTS]> timeStats(o.numRun);
-  // std::vector<int> nbTimeStats(o.numRun); 
-
-  if(o.stats) {
-    _stats.initIterStats();
-    _stats.initTimeStats();
-  }
+  if(o.iterStats)  _stats.initIterStats();
+  if(o.timerStats) _stats.initTimerStats(); 
 
   for(int i = 0; i < o.numRun; i++){
     Nrpa<B,M,L,PL,LM> nrpa(nbThreads, parLevel, o.threadStats); 
@@ -80,7 +74,7 @@ double Nrpa<B,M,L,PL,LM>::test(const Options &o){
     _stats.finishRun(); 
   }
   
-  _stats.writeStats("plots/dat/nrpa_stats", o.tag); 
+  _stats.writeStats("dat/nrpa_stats", o.tag); 
 
   cout<<"Avgscore: "<< avgscore / nbRun<<endl; 
   cout<<"Bestscore-overall: "<< maxscore <<endl; 

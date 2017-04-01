@@ -21,7 +21,8 @@ struct Options{
   int numIter = 10;
   int numThread = 0;
   int timeout = -1;
-  int stats = 0; 
+  int iterStats = 0; 
+  int timerStats = 0; 
   std::string tag = ""; // name for this run, will be used to generate trace data file 
   int parallelLevel = 1; 
   bool threadStats = false; 
@@ -45,14 +46,16 @@ inline Options Options::parse(int &argc, char **&argv){
 	  {"num-iter",   required_argument,       0, 'n'},
 	  {"num-thread",    required_argument,       0, 'x'},
 	  {"timeout",    required_argument,       0, 't'},
-	  {"stats",    optional_argument,       0, 's'},
+	  {"iter-stats",    no_argument,       0, 's'},
+	  {"time-stats",    no_argument,       0, 'S'},
+	  {"tag",    required_argument,       0, 'T'},
 	  {"parallel-level", required_argument, 0, 'p'}, 
 	  {"thread-stats", no_argument, 0, 'q'}, 
 	  {0, 0, 0, 0}
 	};
 
       int option_index = 0;
-      c = getopt_long (argc, argv, "r:l:n:x:t:s::p:q",
+      c = getopt_long (argc, argv, "r:l:n:x:t:sST:p:q",
 		       long_options, &option_index);
      
       /* Detect the end of the options. */
@@ -86,10 +89,14 @@ inline Options Options::parse(int &argc, char **&argv){
 	  o.timeout = atoi(optarg); 
 	  break;
 	case 's':
-	  o.stats = 1;
-	  if(optarg)
-	    o.tag = optarg; 
+	  o.iterStats = 1;
+	  break; 
+	case 'S':
+	  o.timerStats = 1;
 	  break;
+	case 'T':
+	  o.tag = optarg;
+	  break; 
 	case 'p':
 	  o.parallelLevel = atoi(optarg); 
 	  break;
