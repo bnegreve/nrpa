@@ -35,13 +35,15 @@ deps: $(SRCS)
 	$(CXX) $(CXXFLAGS) -MM $^
 
 simple-test: $(TESTS) test_driver.sh
-	for i in $$(ls test-output/*-simple); do ./test_driver.sh -q $$i ; done 
+	for i in $$(ls test-output/*-simple); do \
+	./test_driver.sh -q -R "Total duration" $$i ; \
+	done 
 
 regen-test:
 	@for i in $$(ls test-output/*-simple); do   \
 		COM=$$(head -q -n 1 $$i)           ;\
 		echo "Regenerating test with $$COM";\
-		./test_driver.sh -c -t $$i $$COM      ;\
+		./test_driver.sh -c -t -R "Total duration" $$i $$COM      ;\
 	done
 
 

@@ -4,7 +4,9 @@
 # Made by Benjamin Negrevergne 
 # Started on <2016-01-24 Sun>
 
-regexp=""
+grep=""
+regexp=".*"
+inverted_regexp=""
 sort=""
 keep_output=""
 create_test=""
@@ -18,6 +20,7 @@ Return with success if they are both identical.\n\n
 Options: \n
  -s: sort lines before comparing (with sort)\n
  -r <regexp>: filter out lines not matching regexp (with grep)\n
+ -R <regexp>: filter out lines *matching* regexp (with grep)\n
  -k: keep temporary files in case of failure\n
  -c: create test file instead. See 'Adding a test' section\n
  -t: measure test execution time as well\n
@@ -37,7 +40,12 @@ while [[ "$1" == \-* ]]; do
         -k | --keep-output )    keep_output=1
                                 ;;
 	-r | --grep )           shift
+				grep=1
 				regexp=$1
+				;;
+	-R | --inverted-grep )  shift
+				grep=1
+				inverted_regexp=$1
 				;;
 	-t | --check-runtime )  runtime=1
 	                        ;;
@@ -88,8 +96,8 @@ if [ ! -z $create_test ]; then
 	exit 1
     fi
 
-    if [ ! -z $regexp ]; then
-	grep -e $regexp  /tmp/ref_out > /tmp/ref_out_filtered 
+    if [ ! -z $grep ]; then
+	grep -e "$regexp"  /tmp/ref_out | grep -v -e "$inverted_regexp" > /tmp/ref_out_filtered 
 	mv /tmp/ref_out_filtered /tmp/ref_out
 	cmd_string_regexp=" -r $regexp"
     fi
@@ -183,11 +191,11 @@ if [ $? -ne 0 ] ; then
     exit 1
 fi
 
-if [ ! -z $regexp ]; then
-    grep -e $regexp  /tmp/ref_out > /tmp/ref_out_filtered 
+if [ ! -z $grep ]; then 
+    grep -e "$regexp" /tmp/ref_out | grep -v -e "$inverted_regexp" > /tmp/ref_out_filtered 
     mv /tmp/ref_out_filtered /tmp/ref_out
 
-    grep -e $regexp /tmp/test_out > /tmp/test_out_filtered
+    grep -e "$regexp" /tmp/test_out | grep -v -e "$inverted_regexp" > /tmp/test_out_filtered
     mv /tmp/test_out_filtered /tmp/test_out
 fi
 
