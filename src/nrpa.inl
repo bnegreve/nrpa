@@ -33,15 +33,24 @@ double Nrpa<B,M,L,PL,LM>::run(int level, int nbIter, int timeout){
   assert(level < L); 
   assert(nbIter < MAX_ITER); 
 
-  Policy policy; 
-  _timeout = false; 
   _startLevel = level; 
-  fill_n(_stats, MAX_ITER, NrpaStats()); // reset stats
-  _startTime = clock(); 
-
-  if(timeout != -1) setTimeout(timeout);  // Warning: all these are static, so Nrpa should remain a singleton 
   _nbIter = nbIter; 
+  _timeout = false; 
+  _done = false; 
+
+  setTimers(timeout, true); 
+
+  Policy policy; 
   double score =  run(&_nrpa[level], level, policy);
+
+
+  _doneMutex.lock();
+  _done = true; 
+  _doneCond.notify_all();
+  _doneMutex.unlock(); 
+
+  
+
   cout<<"Bestscore: "<<score<<endl;
   
   return score; 
@@ -62,7 +71,9 @@ double Nrpa<B,M,L,PL,LM>::test(const Options &o){
   double avgscore = 0;
   double maxscore = numeric_limits<double>::lowest(); 
 
-  std::vector<NrpaStats[MAX_ITER]> stats(o.numRun);
+  std::vector<NrpaStats[MAX_ITER]> iterStats(o.numRun);
+  std::vector<NrpaStats[MAX_TIME_EVENTS]> timeStats(o.numRun);
+  std::vector<int> nbTimeStats(o.numRun); 
 
   for(int i = 0; i < o.numRun; i++){
     Nrpa<B,M,L,PL,LM> nrpa(nbThreads, parLevel, o.threadStats); 
@@ -70,8 +81,10 @@ double Nrpa<B,M,L,PL,LM>::test(const Options &o){
     avgscore += score;
     maxscore = max(maxscore,  score); 
 
-    if(o.stats)
-      copy(nrpa._stats, nrpa._stats + nbIter, stats[i]);
+    if(o.stats){
+      copy(nrpa._iterStats, nrpa._iterStats + nbIter, iterStats[i]);
+      copy(nrpa._timerStats, nrpa._timerStats + nrpa._nbTimerEvents, timeStats[i]);
+    }
   }
   
   if(o.stats){
@@ -92,11 +105,23 @@ double Nrpa<B,M,L,PL,LM>::test(const Options &o){
     fs<<"# nbRun "<<nbRun<<" level "<<level<<" nbIter "<<nbIter<<" timeout "<<timeout<<" nbThreads "<<nbThreads<<endl;
     for(int i = 0; i < nbRun; i++){
       for(int j = 0; j < nbIter; j++){
-	NrpaStats &s = stats[i][j]; 
+	NrpaStats &s = iterStats[i][j]; 
 	fs<<j<<" "<<s.date<<" "<<s.bestScore<<" "<<"\n";
       }
     }
     fs.close(); 
+
+    filename<<".timer"; 
+    fs.open(filename.str(), fstream::out);
+    fs<<"# nbRun "<<nbRun<<" level "<<level<<" nbIter "<<nbIter<<" timeout "<<timeout<<" nbThreads "<<nbThreads<<endl;
+    for(int i = 0; i < nbRun; i++){
+      for(int j = 0; j < MAX_TIME_EVENTS; j++){
+	NrpaStats &s = timeStats[i][j]; 
+	fs<<j<<" "<<s.date<<" "<<s.bestScore<<" "<<"\n";
+      }
+    }
+    fs.close(); 
+
   }
 
   cout<<"Avgscore: "<< avgscore / nbRun<<endl; 
@@ -168,9 +193,10 @@ double Nrpa<B,M,L,PL,LM>::runseq(NrpaLevel *nl, int level, const Policy &policy)
     }
 
     if(level == _startLevel){
-      recordStats(i, *nl); 
+      recordIterStats(i, *nl); 
     }
-    if(checkTimeout()) { 
+
+    if(_done) { 
       if( level <= _parLevel) delete sub; 
       return nl->bestRollout.score(); 
     }
@@ -179,6 +205,7 @@ double Nrpa<B,M,L,PL,LM>::runseq(NrpaLevel *nl, int level, const Policy &policy)
       nl->updatePolicy(); 
   }
   
+  /* Cleanup */ 
   if( level <= _parLevel) delete sub; 
 
   return nl->bestRollout.score();
@@ -222,7 +249,7 @@ double Nrpa<B,M,L,PL,LM>::runpar(NrpaLevel *nl, int level, const Policy &policy)
       nl->legalMoveCodes = _subs[best].legalMoveCodes;
     }
 
-    if(checkTimeout()) { return nl->bestRollout.score(); }
+    if(_done) { return nl->bestRollout.score(); }
 
     nl->updatePolicy( ALPHA * _nbThreads );
   }
@@ -332,6 +359,7 @@ void Nrpa<B,M,L,PL,LM>::NrpaLevel::updatePolicy( double alpha ){
 
 template <typename B,typename M, int L, int PL, int LM>
 Nrpa<B,M,L,PL,LM>::NrpaStats::NrpaStats(): bestScore(numeric_limits<double>::lowest()),
+					   iter(0), 
 					   date(0){}
 
 template <typename B,typename M, int L, int PL, int LM>
@@ -341,37 +369,71 @@ void Nrpa<B,M,L,PL,LM>::NrpaStats::prettyPrint(){
 }
 
 template <typename B,typename M, int L, int PL, int LM>
-void Nrpa<B,M,L,PL,LM>::NrpaStats::record(std::ostream &os){
-  //  os<<"# nbIter = "<<_nbIter<<", #nbThreads = "<<_nbThreads<<" level "<<_startLevel<<"\n"; 
-  os<<date<<" "<<bestScore<<" ";
-}
-
-
-template <typename B,typename M, int L, int PL, int LM>
-void Nrpa<B,M,L,PL,LM>::recordStats(int iter, const NrpaLevel &nl){
-  _stats[iter].bestScore = nl.bestRollout.score(); 
-  _stats[iter].date =  static_cast<float>(clock() - _startTime) / CLOCKS_PER_SEC; 
+void Nrpa<B,M,L,PL,LM>::initStats(){
+  fill_n(_iterStats, MAX_ITER, NrpaStats()); // reset stats
+  fill_n(_timerStats, MAX_TIME_EVENTS, NrpaStats()); // reset stats
+  _timerEvent = 0; 
+  _startTime = clock(); 
+  _nbTimerEvents = 0; 
 }
 
 template <typename B,typename M, int L, int PL, int LM>
-void Nrpa<B,M,L,PL,LM>::setTimeout(int sec){
-  thread t([sec, this] { 
-      sleep(sec);
-      _timeout = true;
+void Nrpa<B,M,L,PL,LM>::recordIterStats(int iter, const NrpaLevel &nl){
+  float date =  static_cast<float>(clock() - _startTime) / CLOCKS_PER_SEC; 
+  _iterStats[iter].bestScore = nl.bestRollout.score(); 
+  _iterStats[iter].date =  date; 
+}
+
+template <typename B,typename M, int L, int PL, int LM>
+void Nrpa<B,M,L,PL,LM>::recordTimeStats(float date, int eventIdx,  const NrpaLevel &nl){
+  assert( _nbTimerEvents < MAX_TIME_EVENTS); 
+  _timerStats[_nbTimerEvents].date = date; 
+  _timerStats[_nbTimerEvents].bestScore = nl.bestRollout.score(); 
+  _timerStats[_nbTimerEvents].eventIdx = eventIdx;
+  _nbTimerEvents++; 
+}
+
+template <typename B,typename M, int L, int PL, int LM>
+void Nrpa<B,M,L,PL,LM>::setTimers(int timeout, int timeStats){
+  using namespace chrono;
+
+  int timerEvents[MAX_TIME_EVENTS];
+  int i = 0; 
+  if(timeStats){
+    for(i = 0; i < MAX_TIME_EVENTS; i++){
+      timerEvents[i] = 1<<i; 
+      if(timeout > 0 && timerEvents[i] >= timeout){
+	timerEvents[i] = timeout;
+	break; 
+      }
+    }
+    initStats(); 
+  }
+  else{ 
+    timerEvents[i] = timeout; 
+  }
+
+  int _lastEventIdx = i; 
+
+  auto now = system_clock::now();
+  thread t([this, now, timerEvents, _lastEventIdx, timeStats] {
+      unique_lock<mutex> lk(_doneMutex);
+      for(int i = 0; !_done && i <= _lastEventIdx; i++){
+  	_doneCond.wait_until(lk, now + seconds(timerEvents[i]));
+	float d =  duration_cast<seconds>(system_clock::now() - now).count(); 
+	cout<<"TIMER EVENT at "<<d<<" last idx "<<_lastEventIdx<<" i "<<i<<endl;
+	if(timeStats){
+	  recordTimeStats(d, i, _nrpa[_startLevel]);
+	}
+	if(i == _lastEventIdx) {
+	  _done = true; 
+	  cout<<"Timeout! "<<endl; 
+	}
+      }
+
     });
   t.detach(); 
 }
-
-template <typename B,typename M, int L, int PL, int LM>
-bool Nrpa<B,M,L,PL,LM>::checkTimeout(){
-  if(_timeout){
-    cout<<"Timeout!"<<endl;
-    return true;
-  }
-
-  return false; 
-}
-
 
 template <typename B,typename M, int L, int PL, int LM>
 void Nrpa<B,M,L,PL,LM>::errorif(bool cond, const std::string &msg){
@@ -400,6 +462,10 @@ template <typename B, typename M, int L, int PL, int LM>
 typename Nrpa<B,M,L,PL,LM>::NrpaLevel Nrpa<B,M,L,PL,LM>::_subs[MAX_THREADS]; 
 
 template <typename B, typename M, int L, int PL, int LM>
-typename Nrpa<B,M,L,PL,LM>::NrpaStats Nrpa<B,M,L,PL,LM>::_stats[MAX_ITER]; 
+typename Nrpa<B,M,L,PL,LM>::NrpaStats Nrpa<B,M,L,PL,LM>::_iterStats[MAX_ITER]; 
+
+template <typename B, typename M, int L, int PL, int LM>
+typename Nrpa<B,M,L,PL,LM>::NrpaStats Nrpa<B,M,L,PL,LM>::_timerStats[MAX_TIME_EVENTS]; 
+
 
 

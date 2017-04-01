@@ -53,8 +53,9 @@ public:
   static constexpr double ALPHA = 1.0; 
 
   static const int MAX_THREADS = 128; 
-  static const int MAX_ITER = 128; 
-
+  static const int MAX_ITER = 128;  // maximum number of iteration (used for iteration-based stat collection) 
+  static const int MAX_TIME_EVENTS = 16;  // maximum number of timer events (used for time-based stat collection)
+ 
   Nrpa(int maxThreads = 0, int parLevel = 1, bool threadStats = false);
 
   /* One nrpa run */
@@ -89,24 +90,40 @@ private:
   struct NrpaStats{
     NrpaStats(); 
     void prettyPrint(); 
-    void record(std::ostream &os); 
 
-    double bestScore;
     float date; 
+    int iter; 
+    int eventIdx; 
+    double bestScore;
+
   }; 
 
   double run(NrpaLevel *nl, int level, const Policy &policy);
   double runseq(NrpaLevel *nl, int level, const Policy &policy);     
   double runpar(NrpaLevel *nl, int level, const Policy &policy);     
 
-  bool checkTimeout(); 
+  void setTimers(int timeout = 0, int timeStats = 0);
+
+  void initStats(); 
   void recordStats(int iter, const NrpaLevel &nl); 
+  void recordIterStats(int iter, const NrpaLevel &nl); 
+  void recordTimeStats(float date, int eventIdx, const NrpaLevel &nl); 
 
   static void errorif(bool cond, const std::string &msg = "unknown."); 
   int _startLevel; 
   int _nbIter; 
-  atomic_bool _timeout; 
+
+  atomic_bool _done; 
+  mutex _doneMutex; 
+  condition_variable _doneCond; 
+  
+
+  atomic_bool _timeout;
+  atomic_int _timerEvent; 
+  int _nbTimerEvents; 
   clock_t _startTime; 
+
+  int _lastEventIdx; 
 
   /* Data structures for simple, recursive calls */
   static NrpaLevel _nrpa[L];
@@ -120,7 +137,8 @@ private:
   static NrpaLevel _subs[MAX_THREADS]; 
 
   /* stats */
-  static NrpaStats _stats[MAX_ITER]; 
+  static NrpaStats _iterStats[MAX_ITER]; // stastics collected at each top level iteration 
+  static NrpaStats _timerStats[MAX_TIME_EVENTS]; // stastics collected on time events
   
 }; 
 
