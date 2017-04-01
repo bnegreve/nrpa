@@ -19,6 +19,6 @@ clean:
 	rm -rf *.o same leftMove *~
 
 # non trivial deps. 
-nrpa.o: nrpa.cpp nrpa.hpp rollout.hpp rollout.inl policy.hpp nrpa.inl threadpool.hpp
+nrpa.o: nrpa.cpp nrpa.hpp stats.hpp rollout.hpp rollout.inl policy.hpp nrpa.inl threadpool.hpp 
 
 
