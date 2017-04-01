@@ -52,7 +52,7 @@ inline Options Options::parse(int &argc, char **&argv){
 	};
 
       int option_index = 0;
-      c = getopt_long (argc, argv, "r:l:n:x:t:s:p:q",
+      c = getopt_long (argc, argv, "r:l:n:x:t:s::p:q",
 		       long_options, &option_index);
      
       /* Detect the end of the options. */
