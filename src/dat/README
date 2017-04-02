@@ -1,1 +1,7 @@
-This folder will contain statistics about previous Nrpa runs. 
+This folder will contain statistics about previous Nrpa runs.
+
+To generate statistics run nrpa with the -sS option (-s is for
+iteration based statistics -S for timer based statistics).
+
+The generated files can then be plotted using the script in
+../dat/plot_all.gp (requires gnuplot).
