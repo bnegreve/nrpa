@@ -14,9 +14,9 @@
 template <typename NRPA> 
 class Stats{
 
-  static const int MAX_RUNS = 16; 
+  static const int MAX_RUNS = 32; 
   static const int MAX_ITER = 128;  // maximum number of iteration (used for iteration-based stat collection) 
-  static const int MAX_TIME_EVENTS = 16;  // maximum number of timer events (used for time-based stat collection)
+  static const int MAX_TIME_EVENTS = 32;  // maximum number of timer events (used for time-based stat collection)
 
   
 public: 
