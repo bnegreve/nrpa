@@ -99,7 +99,7 @@ if [ ! -z $create_test ]; then
     if [ ! -z $grep ]; then
 	grep -e "$regexp"  /tmp/ref_out | grep -v -e "$inverted_regexp" > /tmp/ref_out_filtered 
 	mv /tmp/ref_out_filtered /tmp/ref_out
-	cmd_string_regexp=" -r $regexp"
+	cmd_string_regexp=" -r '$regexp' -R '$inverted_regexp'"
     fi
 
     if [ ! -z $sort ]; then

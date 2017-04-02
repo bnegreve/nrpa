@@ -39,13 +39,25 @@ simple-test: $(TESTS) test_driver.sh
 	./test_driver.sh -q -R "Total duration" $$i ; \
 	done 
 
-regen-test:
+medium-test: $(TESTS) test_driver.sh
+	for i in $$(ls test-output/*-medium); do \
+	./test_driver.sh -q -R ".*" $$i ; \
+	done 
+
+
+gen-simple-test:
 	@for i in $$(ls test-output/*-simple); do   \
 		COM=$$(head -q -n 1 $$i)           ;\
 		echo "Regenerating test with $$COM";\
 		./test_driver.sh -c -t -R "Total duration" $$i $$COM      ;\
 	done
 
+gen-medium-test:
+	@for i in $$(ls test-output/*-medium); do                         \
+		COM=$$(head -q -n 1 $$i)                                  ;\
+		echo "Regenerating test with $$COM"                       ;\
+		./test_driver.sh -c -t -R ".*" $$i $$COM      ;\
+	done
 
 clean:
 	rm -rf *.o *~ $(TESTS)
