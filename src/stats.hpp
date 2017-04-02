@@ -9,6 +9,7 @@
 #include <mutex>
 #include <condition_variable>
 #include <sstream>
+#include <iomanip> 
 
 template <typename NRPA> 
 class Stats{
@@ -64,8 +65,8 @@ private:
   int _runNbIter[MAX_RUNS]; 
   int _runNbEvents[MAX_RUNS]; 
 
-  NrpaStats _iterStats[MAX_ITER][MAX_RUNS]; // stastics collected at each top level iteration 
-  NrpaStats _timerStats[MAX_TIME_EVENTS][MAX_RUNS]; // stastics collected on time events
+  NrpaStats _iterStats[MAX_RUNS][MAX_ITER]; // stastics collected at each top level iteration 
+  NrpaStats _timerStats[MAX_RUNS][MAX_TIME_EVENTS]; // stastics collected on time events
 
   atomic_bool _done; 
   std::mutex _doneMutex; 
@@ -140,11 +141,11 @@ void Stats<NRPA>::resetTimeout(){
 
 template <typename NRPA>
 void Stats<NRPA>::finishRun(){
-  _runId++; 
   if(_timerStatsOn || _timeout > 0){
     _thread->join();
     delete _thread;
   }
+  _runId++; 
 }
 
 template <typename NRPA>
@@ -163,11 +164,13 @@ void Stats<NRPA>::recordIterStats(int iter, const typename NRPA::NrpaLevel &nl){
 template <typename NRPA>
 void Stats<NRPA>::recordTimerStats(const typename NRPA::NrpaLevel &nl){
   if(_timerStatsOn){
-    int eventIdx = _runNbEvents[_runId]; 
-
+    int eventIdx = _runNbEvents[_runId];
     _timerStats[_runId][eventIdx].date = getTime(); 
     _timerStats[_runId][eventIdx].bestScore = nl.bestRollout.score(); 
     _timerStats[_runId][eventIdx].eventIdx = eventIdx;
+
+    // cout<<"RECORD Timer event "<<_runNbEvents[_runId]<<" at <"
+    // 	<<_timerStats[_runId][eventIdx].date<<">"<<"\n";
 
     _runNbEvents[_runId]++;
   }
@@ -179,14 +182,14 @@ void Stats<NRPA>::writeStats(const string &prefix, const std::string &tag) const
   if( ! ( _iterStatsOn || _timerStatsOn ) ) return ; 
 
   fstream fs;
+  fs << fixed;
+  fs << setprecision(2);
+
   ostringstream filename;
 
   filename<<prefix;
-  filename<<"_nbRun."<<_runId;
   filename<<"_level."<<_nrpa->_startLevel;
   filename<<"_nbIter."<<_nrpa->_nbIter;
-  filename<<"_timeout."<<_timeout;
-  filename<<"_nbThreads."<<_nrpa->_nbThreads;
 
   if(_iterStatsOn){
     ostringstream iterfilename; 
@@ -195,6 +198,9 @@ void Stats<NRPA>::writeStats(const string &prefix, const std::string &tag) const
       iterfilename<<"."<<tag;
     
     fs.open(iterfilename.str(), fstream::out);
+    fs<<"#nbRun: "<<_runId<<"\n"; 
+    fs<<"#timeout: "<<_timeout<<"\n"; 
+    fs<<"#num-threads: "<<_nrpa->_nbThreads<<"\n"; 
     fs<<"#<RunId> <iterId> <timestamp> <currentbestscore>"<<"\n";
     //fs<<"# nbRun "<<nbRun<<" level "<<level<<" nbIter "<<nbIter<<" timeout "<<timeout<<" nbThreads "<<nbThreads<<endl;
     for(int i = 0; i < _runId; i++){
@@ -202,6 +208,7 @@ void Stats<NRPA>::writeStats(const string &prefix, const std::string &tag) const
 	const NrpaStats &s = _iterStats[i][j]; 
 	fs<<i<<" "<<j<<" "<<s.date<<" "<<s.bestScore<<" "<<"\n";
       }
+      fs<<"\n\n"; 
     }
     fs.close(); 
   }
@@ -214,12 +221,16 @@ void Stats<NRPA>::writeStats(const string &prefix, const std::string &tag) const
 
     fs.open(timerfilename.str(), fstream::out);
     //fs<<"# nbRun "<<nbRun<<" level "<<level<<" nbIter "<<nbIter<<" timeout "<<timeout<<" nbThreads "<<nbThreads<<endl;
+    fs<<"#nbRun: "<<_runId<<"\n"; 
+    fs<<"#timeout: "<<_timeout<<"\n"; 
+    fs<<"#num-threads: "<<_nrpa->_nbThreads<<"\n"; 
     fs<<"#<RunId> <timereventid> <timestamp> <currentbestscore>"<<"\n";
     for(int i = 0; i < _runId; i++){
       for(int j = 0; j < _runNbEvents[i]; j++){
 	const NrpaStats &s = _timerStats[i][j]; 
 	fs<<i<<" "<<j<<" "<<s.date<<" "<<s.bestScore<<" "<<"\n";
       }
+      fs<<"\n\n"; 
     }
     fs.close();
   }
@@ -248,15 +259,15 @@ void Stats<NRPA>::setTimers(){
   _startTime = system_clock::now();
   _thread = new thread([this, timerEvents] {
       unique_lock<mutex> lk(_doneMutex);
-      for(int i = 0; !_done && i <= _lastEventIdx; i++){
+      int i; 
+      for(i = 0; i <= _lastEventIdx; i++){
   	_doneCond.wait_until(lk, _startTime + seconds(timerEvents[i]));
-	float d =  duration_cast<seconds>(system_clock::now() - _startTime).count(); 
-	//	cout<<"TIMER EVENT at "<<d<<" last idx "<<_lastEventIdx<<" i "<<i<<endl;
 	recordTimerStats(_nrpa->_nrpa[_nrpa->_startLevel]);
-	if(i == _lastEventIdx) {
-	  _done = true; 
-	  cout<<"Timeout! "<<endl; 
-	}
+	if(_done) break; // nrpa has terminated normally
+      }
+      if( i > _lastEventIdx) { //timeout!
+	_done = true; 
+	cout<<"Timeout!"<<endl;
       }
     });
 }
