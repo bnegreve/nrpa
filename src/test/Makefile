@@ -52,26 +52,27 @@ clean:
 
 #deps: generated with make deps
 algebra.o: algebra.cpp ../nrpa.hpp ../rollout.hpp ../rollout.inl \
- ../policy.hpp ../threadpool.hpp ../cli.hpp ../nrpa.inl
+ ../policy.hpp ../threadpool.hpp ../cli.hpp ../stats.hpp ../nrpa.inl
 bus.o: bus.cpp ../nrpa.hpp ../rollout.hpp ../rollout.inl ../policy.hpp \
- ../threadpool.hpp ../cli.hpp ../nrpa.inl
+ ../threadpool.hpp ../cli.hpp ../stats.hpp ../nrpa.inl
 formula.o: formula.cpp ../nrpa.hpp ../rollout.hpp ../rollout.inl \
- ../policy.hpp ../threadpool.hpp ../cli.hpp ../nrpa.inl
+ ../policy.hpp ../threadpool.hpp ../cli.hpp ../stats.hpp ../nrpa.inl
 maximum.o: maximum.cpp ../nrpa.hpp ../rollout.hpp ../rollout.inl \
- ../policy.hpp ../threadpool.hpp ../cli.hpp ../nrpa.inl
+ ../policy.hpp ../threadpool.hpp ../cli.hpp ../stats.hpp ../nrpa.inl
 parity.o: parity.cpp ../nrpa.hpp ../rollout.hpp ../rollout.inl \
- ../policy.hpp ../threadpool.hpp ../cli.hpp ../nrpa.inl
+ ../policy.hpp ../threadpool.hpp ../cli.hpp ../stats.hpp ../nrpa.inl
 prime.o: prime.cpp ../nrpa.hpp ../rollout.hpp ../rollout.inl \
- ../policy.hpp ../threadpool.hpp ../cli.hpp ../nrpa.inl
+ ../policy.hpp ../threadpool.hpp ../cli.hpp ../stats.hpp ../nrpa.inl
 prisonners.o: prisonners.cpp ../nrpa.hpp ../rollout.hpp ../rollout.inl \
- ../policy.hpp ../threadpool.hpp ../cli.hpp ../nrpa.inl
+ ../policy.hpp ../threadpool.hpp ../cli.hpp ../stats.hpp ../nrpa.inl
 same.o: same.cpp ../nrpa.hpp ../rollout.hpp ../rollout.inl ../policy.hpp \
- ../threadpool.hpp ../cli.hpp ../nrpa.inl
+ ../threadpool.hpp ../cli.hpp ../stats.hpp ../nrpa.inl
 serieFinanciere.o: serieFinanciere.cpp ../nrpa.hpp ../rollout.hpp \
- ../rollout.inl ../policy.hpp ../threadpool.hpp ../cli.hpp ../nrpa.inl
+ ../rollout.inl ../policy.hpp ../threadpool.hpp ../cli.hpp ../stats.hpp \
+ ../nrpa.inl
 tsptw.o: tsptw.cpp ../nrpa.hpp ../rollout.hpp ../rollout.inl \
- ../policy.hpp ../threadpool.hpp ../cli.hpp ../nrpa.inl
+ ../policy.hpp ../threadpool.hpp ../cli.hpp ../stats.hpp ../nrpa.inl
 tsptw_stop.o: tsptw_stop.cpp ../nrpa.hpp ../rollout.hpp ../rollout.inl \
- ../policy.hpp ../threadpool.hpp ../cli.hpp ../nrpa.inl
+ ../policy.hpp ../threadpool.hpp ../cli.hpp ../stats.hpp ../nrpa.inl
 ws.o: ws.cpp ../nrpa.hpp ../rollout.hpp ../rollout.inl ../policy.hpp \
- ../threadpool.hpp ../cli.hpp ../nrpa.inl
+ ../threadpool.hpp ../cli.hpp ../stats.hpp ../nrpa.inl
