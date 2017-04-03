@@ -54,7 +54,6 @@ class Nrpa {
 public: 
 
   static constexpr double ALPHA = 1.0; 
-
   static const int MAX_THREADS = 128; 
  
   Nrpa(int maxThreads = 0, int parLevel = 1, bool threadStats = false);
@@ -67,9 +66,6 @@ public:
   static double test(const Options &options); 
   static double test(int nbRun = 5, int level = L - 1, int nbIter = 10,
 		     int timeout = -1, int nbThreads = 0); 
-
-  void setTimeout(int sec);
-
 
 private:
   
@@ -85,6 +81,13 @@ private:
 
     void updatePolicy(double alpha = ALPHA); 
     double playout (const Policy &policy);
+    inline NrpaLevel &operator=(const NrpaLevel &o){ //TODO move elsewhere
+      bestScore = o.bestScore;
+      levelPolicy = o.levelPolicy;
+      bestRollout = o.bestRollout;
+      legalMoveCodes = o.legalMoveCodes; 
+      return *this; 
+    }
 
   }; 
 
@@ -92,6 +95,8 @@ private:
   double runseq(NrpaLevel *nl, int level, const Policy &policy);     
   double runpar(NrpaLevel *nl, int level, const Policy &policy);     
   double runpar2(NrpaLevel *nl, int level, const Policy &policy);     
+  double runpar3(NrpaLevel *nl, int level, const Policy &policy);     
+
 
   static void errorif(bool cond, const std::string &msg = "unknown."); 
   int _startLevel; 
@@ -109,6 +114,8 @@ private:
   static NrpaLevel _subs[MAX_THREADS]; 
 
   static Stats<Nrpa<B,M,L,PL,LM>> _stats; 
+
+  static int _parStrat;
   
 }; 
 

@@ -25,6 +25,7 @@ struct Options{
   int timerStats = 0; 
   std::string tag = ""; // name for this run, will be used to generate trace data file 
   int parallelLevel = 1; 
+  int parStrat = 1; 
   bool threadStats = false; 
 
   static Options parse(int &argc, char **&argv); 
@@ -50,12 +51,13 @@ inline Options Options::parse(int &argc, char **&argv){
 	  {"time-stats",    no_argument,       0, 'S'},
 	  {"tag",    required_argument,       0, 'T'},
 	  {"parallel-level", required_argument, 0, 'p'}, 
+	  {"parallel-srat", required_argument, 0, 'P'}, 
 	  {"thread-stats", no_argument, 0, 'q'}, 
 	  {0, 0, 0, 0}
 	};
 
       int option_index = 0;
-      c = getopt_long (argc, argv, "r:l:n:x:t:sST:p:q",
+      c = getopt_long (argc, argv, "r:l:n:x:t:sST:p:qP:",
 		       long_options, &option_index);
      
       /* Detect the end of the options. */
@@ -99,6 +101,9 @@ inline Options Options::parse(int &argc, char **&argv){
 	  break; 
 	case 'p':
 	  o.parallelLevel = atoi(optarg); 
+	  break;
+	case 'P':
+	  o.parStrat = atoi(optarg); 
 	  break;
 	case 'q':
 	  o.threadStats = true; 

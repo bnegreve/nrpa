@@ -28,6 +28,7 @@ Nrpa<B,M,L,PL,LM>::Nrpa(int maxThreads, int parLevel, bool threadStats){
 	_nbThreads = maxThreads; 
       }
       _parLevel = parLevel; 
+      _parStrat = 1; 
     }
   }
 }
@@ -58,6 +59,8 @@ double Nrpa<B,M,L,PL,LM>::test(const Options &o){
   int nbThreads = o.numThread;
   int level = o.numLevel;
   int parLevel = o.parallelLevel; 
+
+  _parStrat = o.parStrat; 
 
   errorif(level >= L, "level should be lower than L template argument."); 
   
@@ -107,9 +110,26 @@ double Nrpa<B,M,L,PL,LM>::run(NrpaLevel *nl, int level, const Policy &policy){
     score = nl->playout(policy); 
   }
   else if(_nbThreads > 1 && level == _parLevel){
-    score = runpar(nl, level, policy); 
+
+    /* Parallel call */ 
+    switch(_parStrat){
+    case 1:
+      score = runpar(nl, level, policy);
+      break;
+    case 2:
+      score = runpar2(nl, level, policy);
+      break;
+    case 3: 
+      score = runpar3(nl, level, policy); 
+      break;
+    default:
+      errorif(true, "Unknown parallelization strategy"); 
+    }
+
   }
   else{
+
+    /* Sequential call */ 
     score = runseq(nl, level, policy); 
   }
 
@@ -138,7 +158,7 @@ double Nrpa<B,M,L,PL,LM>::runseq(NrpaLevel *nl, int level, const Policy &policy)
     double score = run(sub, level - 1, nl->levelPolicy); 
     if (score >= nl->bestRollout.score()) {
       int length = sub->bestRollout.length(); 
-      nl->bestRollout = sub->bestRollout;
+      nl->bestRollout = sub->bestRollout; // TODO only copy at the end of the loop
       nl->legalMoveCodes = sub->legalMoveCodes; 
 	
       if (level > L - 3) {
@@ -165,6 +185,7 @@ double Nrpa<B,M,L,PL,LM>::runseq(NrpaLevel *nl, int level, const Policy &policy)
   return nl->bestRollout.score();
 
 }
+
 
 template <typename B,typename  M, int L, int PL, int LM>
 double Nrpa<B,M,L,PL,LM>::runpar(NrpaLevel *nl, int level, const Policy &policy){
@@ -258,6 +279,69 @@ double Nrpa<B,M,L,PL,LM>::runpar2(NrpaLevel *nl, int level, const Policy &policy
   for(int j = 0; j < _nbThreads; j++){
     _subs[j].result.wait();
   }
+
+  return nl->bestRollout.score();
+
+}
+
+template <typename B,typename  M, int L, int PL, int LM>
+double Nrpa<B,M,L,PL,LM>::runpar3(NrpaLevel *nl, int level, const Policy &policy){
+  using namespace std; 
+  assert(level < L); 
+  assert(level != 0); // level 0 should be a call to rollout
+
+  nl->bestRollout.reset(); 
+  nl->levelPolicy = policy; 
+
+  mutex m; 
+  int best = -1; 
+  static NrpaLevel localNrpaLevels[MAX_THREADS];
+
+  for(int j = 0; j < _nbThreads; j++){
+    _subs[j].result = _threadPool.submit([ this, nl, level, j, &m, &best ]() -> int {
+
+	NrpaLevel *localnl = &localNrpaLevels[j];
+	NrpaLevel *sub = &_subs[j];
+	double localBest = localnl->bestRollout.score(); 
+
+	m.lock(); 
+	*localnl = *nl; 
+	m.unlock(); 
+
+	for(int i = 0; i < _nbIter; i+= _nbThreads){
+	  double score = run(sub, level - 1, localnl->levelPolicy);
+	  if(score >= localnl->bestRollout.score()){
+	    localnl->bestRollout = sub->bestRollout; 
+	    localnl->legalMoveCodes = sub->legalMoveCodes;
+	  }
+
+	  m.lock();
+	  if(nl->bestRollout.score() <= localnl->bestRollout.score()){
+	    best = j; 
+	    nl->bestRollout = sub->bestRollout; 
+	    nl->legalMoveCodes = sub->legalMoveCodes;
+	  }
+	  else { // nl is better than local nl, 
+	    localnl->bestRollout = nl->bestRollout; 
+	    localnl->legalMoveCodes = nl->legalMoveCodes;
+	  }
+	  m.unlock();  
+
+	  localnl->updatePolicy(); 
+
+	  if(_stats.timeout()) break;
+
+	}
+	return 1;
+      }); 
+  }
+
+  for(int j = 0; j < _nbThreads; j++){
+    _subs[j].result.wait();
+  }
+
+  if(best != -1)
+    *nl = localNrpaLevels[best];
 
   return nl->bestRollout.score();
 
@@ -382,6 +466,9 @@ int Nrpa<B,M,L,PL,LM>::_nbThreads;
 
 template <typename B, typename M, int L, int PL, int LM>
 int Nrpa<B,M,L,PL,LM>::_parLevel; 
+
+template <typename B, typename M, int L, int PL, int LM>
+int Nrpa<B,M,L,PL,LM>::_parStrat; 
 
 template <typename B, typename M, int L, int PL, int LM>
 ThreadPool Nrpa<B,M,L,PL,LM>::_threadPool; 
