@@ -18,11 +18,14 @@ Nrpa<B,M,L,PL,LM>::Nrpa(int maxThreads, int parLevel, bool threadStats){
   }
   else{
     if( ! _threadPool.initialized() ){
-      if(maxThreads == 0)
-	_threadPool.init(maxThreads, threadStats);
-      else
-	_threadPool.init(maxThreads, threadStats);
-      _nbThreads = _threadPool.nbThreads(); 
+      if(maxThreads == 0){
+	_threadPool.init(thread::hardware_concurrency() - 1, threadStats); 
+	_nbThreads = _threadPool.nbThreads() + 1; // main thread included
+      }
+      else{
+	_threadPool.init(maxThreads - 1, threadStats);
+	_nbThreads = maxThreads; 
+      }
       _parLevel = parLevel; 
     }
   }
@@ -171,24 +174,27 @@ double Nrpa<B,M,L,PL,LM>::runpar(NrpaLevel *nl, int level, const Policy &policy)
   nl->bestRollout.reset(); 
   nl->levelPolicy = policy; 
     
-  //  static ThreadPool t(maxThreads); 
-  //  static const int nbThreads = t.nbThreads(); 
-  //    NrpaLevel *subs = &_subs; 
-
   for(int i = 0; i < _nbIter; i+= _nbThreads){
-    /* Run n thraeds */ 
+    /* Run n threads */ 
     for(int j = 0; j < _nbThreads; j++){
-      _subs[j].result = _threadPool.submit([ this, nl, level, j ]() -> int {
-	  NrpaLevel *sub = &_subs[j];
-	  run(sub, level - 1, nl->levelPolicy); return 1; });
+      if(j != _nbThreads - 1){ // push task to threadpool!
+	_subs[j].result = _threadPool.submit([ this, nl, level, j ]() -> int {
+	    NrpaLevel *sub = &_subs[j];
+	    run(sub, level - 1, nl->levelPolicy); return 1; });
+      }
+      else{ // last iter is handled by this thread
+	NrpaLevel *sub = &_subs[j];
+	run(sub, level - 1, nl->levelPolicy);
+      }
     }
-
 
     /* fetch the best rollout among all parallel runs (if any better than before) */ 
     int best = -1; 
     double bestScore = nl->bestRollout.score();// numeric_limits<double>::lowest(); 
     for(int j = 0; j < _nbThreads; j++){
-      _subs[j].result.wait();
+      if(j != _nbThreads - 1) 
+	_subs[j].result.wait(); 
+
       if(_subs[j].bestRollout.score() >= bestScore){
 	bestScore = _subs[j].bestRollout.score(); 
 	best = j;
