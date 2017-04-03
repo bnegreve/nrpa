@@ -284,8 +284,8 @@ vector<vector<double> > Board::distance;
 //#include "nrpa.c"
 
 int main (int argc, char *argv []) {
-  const char * output_instance = "SolomonPotvinBengio/rc_204.1.sol"; 
-  string input_instance =        "SolomonPotvinBengio/rc_204.1.txt"; 
+  const char * output_instance = "data/tsptw/SolomonPotvinBengio/rc_204.1.sol"; 
+  string input_instance =        "data/tsptw/SolomonPotvinBengio/rc_204.1.txt"; 
   //string input_instance =        "SolomonPotvinBengio/rc_206.3.txt"; 
   //const char * output_instance = "SolomonPesant/rc203.0.sol";
   //string input_instance =        "SolomonPesant/rc203.0";

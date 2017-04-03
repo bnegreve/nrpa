@@ -1,9 +1,101 @@
-./tsptw -x 1 -l 3 -n 10
+./tsptw -x 1 -l 4 -n 6
 == Options ==
 numRun = 4
-numLevel = 3
-numIter = 10
+numLevel = 4
+numIter = 6
 numThread = 1
 timeout = -1
 == End of options ==
-error: file SolomonPotvinBengio/rc_204.1.txt could not be opened
+		Level : 3, N:0, score : -28001994.000000
+		Level : 3, N:2, score : -28001994.000000
+		Level : 3, N:3, score : -27002125.000000
+		Level : 3, N:4, score : -26001630.000000
+			Level : 4, N:0, score : -26001630.000000
+		Level : 3, N:0, score : -30002006.000000
+		Level : 3, N:1, score : -28001823.000000
+		Level : 3, N:3, score : -27001830.000000
+		Level : 3, N:0, score : -27001957.000000
+		Level : 3, N:4, score : -27001951.000000
+		Level : 3, N:5, score : -26001972.000000
+		Level : 3, N:0, score : -30002002.000000
+		Level : 3, N:1, score : -26002154.000000
+		Level : 3, N:0, score : -25001885.000000
+		Level : 3, N:1, score : -24001622.000000
+			Level : 4, N:4, score : -24001622.000000
+		Level : 3, N:0, score : -29001951.000000
+		Level : 3, N:1, score : -26002053.000000
+		Level : 3, N:2, score : -25001782.000000
+Bestscore: -2.40016e+07
+		Level : 3, N:0, score : -30002054.000000
+		Level : 3, N:1, score : -29002107.000000
+		Level : 3, N:3, score : -29001935.000000
+		Level : 3, N:4, score : -29001905.000000
+			Level : 4, N:0, score : -29001905.000000
+		Level : 3, N:0, score : -28001831.000000
+		Level : 3, N:3, score : -28001711.000000
+		Level : 3, N:4, score : -26001850.000000
+			Level : 4, N:1, score : -26001850.000000
+		Level : 3, N:0, score : -29001873.000000
+		Level : 3, N:3, score : -28001878.000000
+		Level : 3, N:5, score : -26001974.000000
+		Level : 3, N:0, score : -28001819.000000
+		Level : 3, N:4, score : -25001695.000000
+			Level : 4, N:3, score : -25001695.000000
+		Level : 3, N:0, score : -29001937.000000
+		Level : 3, N:3, score : -25001797.000000
+		Level : 3, N:0, score : -26001820.000000
+		Level : 3, N:5, score : -26001794.000000
+Bestscore: -2.50017e+07
+		Level : 3, N:0, score : -30001980.000000
+		Level : 3, N:1, score : -29002068.000000
+		Level : 3, N:2, score : -28001872.000000
+		Level : 3, N:3, score : -27001870.000000
+		Level : 3, N:5, score : -27001818.000000
+			Level : 4, N:0, score : -27001818.000000
+		Level : 3, N:0, score : -30002003.000000
+		Level : 3, N:1, score : -28001853.000000
+		Level : 3, N:2, score : -28001832.000000
+		Level : 3, N:4, score : -26001806.000000
+			Level : 4, N:1, score : -26001806.000000
+		Level : 3, N:0, score : -29001963.000000
+		Level : 3, N:2, score : -29001938.000000
+		Level : 3, N:4, score : -28001855.000000
+		Level : 3, N:0, score : -28001897.000000
+		Level : 3, N:1, score : -26001990.000000
+		Level : 3, N:3, score : -25001805.000000
+		Level : 3, N:5, score : -25001704.000000
+			Level : 4, N:3, score : -25001704.000000
+		Level : 3, N:0, score : -27001870.000000
+		Level : 3, N:1, score : -27001711.000000
+		Level : 3, N:2, score : -26001764.000000
+		Level : 3, N:5, score : -25001710.000000
+		Level : 3, N:0, score : -28001912.000000
+		Level : 3, N:2, score : -26001881.000000
+		Level : 3, N:4, score : -26001839.000000
+Bestscore: -2.50017e+07
+		Level : 3, N:0, score : -27002082.000000
+		Level : 3, N:1, score : -27001963.000000
+		Level : 3, N:5, score : -27001871.000000
+			Level : 4, N:0, score : -27001871.000000
+		Level : 3, N:0, score : -30002080.000000
+		Level : 3, N:1, score : -29001762.000000
+		Level : 3, N:3, score : -28001997.000000
+		Level : 3, N:4, score : -28001966.000000
+		Level : 3, N:5, score : -23001765.000000
+			Level : 4, N:1, score : -23001765.000000
+		Level : 3, N:0, score : -28002016.000000
+		Level : 3, N:2, score : -28001987.000000
+		Level : 3, N:4, score : -28001786.000000
+		Level : 3, N:5, score : -24001827.000000
+		Level : 3, N:0, score : -30002124.000000
+		Level : 3, N:1, score : -26001960.000000
+		Level : 3, N:2, score : -26001923.000000
+		Level : 3, N:5, score : -25001608.000000
+		Level : 3, N:0, score : -27001913.000000
+		Level : 3, N:1, score : -25001860.000000
+		Level : 3, N:3, score : -24001725.000000
+		Level : 3, N:0, score : -25001788.000000
+		Level : 3, N:5, score : -25001770.000000
+Bestscore: -2.30018e+07
+Avgscore: -2.42517e+07
+Bestscore-overall: -2.30018e+07
