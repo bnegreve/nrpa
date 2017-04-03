@@ -91,6 +91,7 @@ private:
   double run(NrpaLevel *nl, int level, const Policy &policy);
   double runseq(NrpaLevel *nl, int level, const Policy &policy);     
   double runpar(NrpaLevel *nl, int level, const Policy &policy);     
+  double runpar2(NrpaLevel *nl, int level, const Policy &policy);     
 
   static void errorif(bool cond, const std::string &msg = "unknown."); 
   int _startLevel; 

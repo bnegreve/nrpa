@@ -4,6 +4,7 @@
 #include <limits>
 #include <algorithm>
 #include <sstream> 
+#include <mutex>
 #include "threadpool.hpp"
 
 
@@ -216,6 +217,52 @@ double Nrpa<B,M,L,PL,LM>::runpar(NrpaLevel *nl, int level, const Policy &policy)
   return nl->bestRollout.score();
 
 }
+
+
+template <typename B,typename  M, int L, int PL, int LM>
+double Nrpa<B,M,L,PL,LM>::runpar2(NrpaLevel *nl, int level, const Policy &policy){
+  using namespace std; 
+  assert(level < L); 
+  assert(level != 0); // level 0 should be a call to rollout
+
+  nl->bestRollout.reset(); 
+  nl->levelPolicy = policy; 
+
+  int best = nl->bestRollout.score(); 
+  mutex m; 
+  for(int j = 0; j < _nbThreads; j++){
+    _subs[j].result = _threadPool.submit([ this, nl, level, j, best, &m ]() -> int {
+	//NrpaLevel localNrpa = *nl; /
+	double localBest = best; 
+	NrpaLevel *sub = &_subs[j];
+	for(int i = 0; i < _nbIter; i+= _nbThreads){
+	  double score = run(sub, level - 1, nl->levelPolicy);
+	  if(score >= localBest){ 
+	    m.lock(); 
+	    if(score >= nl->bestRollout.score()){
+	      localBest = score;
+	      nl->bestRollout = sub->bestRollout; // TODO only copy at the end of the loop
+	      nl->legalMoveCodes = sub->legalMoveCodes;
+	    }
+	    nl->updatePolicy();  // TODO: OUTCHH!! don't update inside the mutex
+	    m.unlock();  
+	  }
+
+	  if(_stats.timeout()) break;
+
+	}
+	return 1;
+      }); 
+  }
+
+  for(int j = 0; j < _nbThreads; j++){
+    _subs[j].result.wait();
+  }
+
+  return nl->bestRollout.score();
+
+}
+
 
 template <typename B,typename  M, int L, int PL, int LM>
 double Nrpa<B,M,L,PL,LM>::NrpaLevel::playout (const Policy &policy) {
