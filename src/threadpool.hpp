@@ -99,7 +99,10 @@ public:
     _nbThreads = nbThreads; 
     _threadStats = threadStats; 
     _startTime = clock::now(); 
-    fill_n(_workTime, _nbThreads, clock::duration::zero()); 
+    if(_threadStats){
+      fill_n(_workTime, _nbThreads, clock::duration::zero());
+      fill_n(_numTasks, _nbThreads, 0);
+    }
 
     cout<<"Initializing thread pool with "<<_nbThreads<<" thread(s)."<<endl; 
     _done = false; 
@@ -126,12 +129,18 @@ public:
   }
 
   inline void printStats(){
+    using namespace chrono;
     clock::duration totalDuration = clock::now() - _startTime; 
     if(_threadStats){
       for(int i = 0; i < _nbThreads; i++){
 	cout<<"Thread "<<i<<" has completed "<<_numTasks[i]<<" task(s) and worked for "
-	    <<chrono::duration_cast<chrono::milliseconds>(_workTime[i]).count() / 1000.f<<"sec. ("
-	    <<(static_cast<float>(_workTime[i].count()) / totalDuration.count()) * 100<<"% of the time.)\n"; 
+	    <<duration_cast<milliseconds>(_workTime[i]).count() / 1000.f<<"sec. ("
+	    <<(static_cast<float>(_workTime[i].count()) / totalDuration.count()) * 100<<"% of the time.)\n"
+	    <<"Total working time for this thread: "<<(duration_cast<milliseconds>(_workTime[i]).count())<<"ms.\n"
+	    <<"Number of tasks done by this thread: "<<_numTasks[i]<<".\n"
+	    <<"Average task duration for this thread: "<<(duration_cast<milliseconds>(_workTime[i]).count() / (float)_numTasks[i])<<"ms.\n"; 
+
+
       }
     }
     cout<<"Total duration: "<<
