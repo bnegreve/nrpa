@@ -28,7 +28,6 @@ Nrpa<B,M,L,PL,LM>::Nrpa(int maxThreads, int parLevel, bool threadStats){
 	_nbThreads = maxThreads; 
       }
       _parLevel = parLevel; 
-      _parStrat = 1; 
     }
   }
 }
