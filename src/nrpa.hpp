@@ -97,6 +97,10 @@ private:
   double runpar2(NrpaLevel *nl, int level, const Policy &policy);     
   double runpar3(NrpaLevel *nl, int level, const Policy &policy);     
 
+  int doTask2(NrpaLevel *nl, int level, int tid, double localBest, mutex *mutex); 
+  int doTask3(NrpaLevel *nl, int level, int tid, double localBest, mutex *mutex); 
+  int doTask3(NrpaLevel *nl, NrpaLevel *localnl, int level, int tid, mutex *m); 
+
 
   static void errorif(bool cond, const std::string &msg = "unknown."); 
   int _startLevel; 

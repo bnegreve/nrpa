@@ -240,6 +240,29 @@ double Nrpa<B,M,L,PL,LM>::runpar(NrpaLevel *nl, int level, const Policy &policy)
 
 
 template <typename B,typename  M, int L, int PL, int LM>
+int Nrpa<B,M,L,PL,LM>::doTask2(NrpaLevel *nl, int level, int tid, double localBest, mutex *m){
+  NrpaLevel *sub = &_subs[tid];
+  for(int i = 0; i < _nbIter; i+= _nbThreads){
+    double score = run(sub, level - 1, nl->levelPolicy);
+    if(score >= localBest){ 
+      m->lock(); 
+      if(score >= nl->bestRollout.score()){
+	localBest = score;
+	nl->bestRollout = sub->bestRollout; // TODO only copy at the end of the loop
+	nl->legalMoveCodes = sub->legalMoveCodes;
+      }
+      nl->updatePolicy();  // TODO: OUTCHH!! don't update inside the mutex
+      m->unlock();  
+    }
+
+    if(_stats.timeout()) break;
+
+  }
+  return 1;  
+}
+
+
+template <typename B,typename  M, int L, int PL, int LM>
 double Nrpa<B,M,L,PL,LM>::runpar2(NrpaLevel *nl, int level, const Policy &policy){
   using namespace std; 
   assert(level < L); 
@@ -248,40 +271,65 @@ double Nrpa<B,M,L,PL,LM>::runpar2(NrpaLevel *nl, int level, const Policy &policy
   nl->bestRollout.reset(); 
   nl->levelPolicy = policy; 
 
-  int best = nl->bestRollout.score(); 
+  double best = nl->bestRollout.score(); 
   mutex m; 
   for(int j = 0; j < _nbThreads; j++){
-    _subs[j].result = _threadPool.submit([ this, nl, level, j, best, &m ]() -> int {
-	//NrpaLevel localNrpa = *nl; /
-	double localBest = best; 
-	NrpaLevel *sub = &_subs[j];
-	for(int i = 0; i < _nbIter; i+= _nbThreads){
-	  double score = run(sub, level - 1, nl->levelPolicy);
-	  if(score >= localBest){ 
-	    m.lock(); 
-	    if(score >= nl->bestRollout.score()){
-	      localBest = score;
-	      nl->bestRollout = sub->bestRollout; // TODO only copy at the end of the loop
-	      nl->legalMoveCodes = sub->legalMoveCodes;
-	    }
-	    nl->updatePolicy();  // TODO: OUTCHH!! don't update inside the mutex
-	    m.unlock();  
-	  }
-
-	  if(_stats.timeout()) break;
-
-	}
-	return 1;
-      }); 
+    if(j != _nbThreads - 1){
+      _subs[j].result = _threadPool.submit([ this, nl, level, j, best, &m ]() -> int {
+	  return doTask2(nl, level, j, best, &m); 
+	});
+    }
+    else{
+      doTask2(nl, level, j, best, &m);
+    }
   }
 
   for(int j = 0; j < _nbThreads; j++){
-    _subs[j].result.wait();
+    if(j != _nbThreads - 1) _subs[j].result.wait();
   }
 
   return nl->bestRollout.score();
 
 }
+
+template <typename B,typename  M, int L, int PL, int LM>
+int Nrpa<B,M,L,PL,LM>::doTask3(NrpaLevel *nl, NrpaLevel *localnl, int level, int tid, mutex *m){
+  // nl is the parent nrpa level
+  // localnl is the threadlocal copy of the parent nrpa level // may be removed ? 
+  // sub is the child nrpalevel 
+  NrpaLevel *sub = &_subs[tid];
+  double localBest = localnl->bestRollout.score(); 
+
+  m->lock(); 
+  *localnl = *nl; 
+  m->unlock(); 
+
+  for(int i = 0; i < _nbIter; i+= _nbThreads){
+    double score = run(sub, level - 1, localnl->levelPolicy);
+    if(score >= localnl->bestRollout.score()){
+      localnl->bestRollout = sub->bestRollout; 
+      localnl->legalMoveCodes = sub->legalMoveCodes;
+    }
+
+    m->lock();
+    if(nl->bestRollout.score() <= localnl->bestRollout.score()){
+      nl->bestRollout = sub->bestRollout; 
+      nl->legalMoveCodes = sub->legalMoveCodes;
+    }
+    else { // nl is better than local nl, 
+      localnl->bestRollout = nl->bestRollout; 
+      localnl->legalMoveCodes = nl->legalMoveCodes;
+    }
+    m->unlock();  
+
+    localnl->updatePolicy(); 
+
+    if(_stats.timeout()) break;
+
+  }
+  return localnl->bestRollout.score();
+}
+
 
 template <typename B,typename  M, int L, int PL, int LM>
 double Nrpa<B,M,L,PL,LM>::runpar3(NrpaLevel *nl, int level, const Policy &policy){
@@ -293,54 +341,29 @@ double Nrpa<B,M,L,PL,LM>::runpar3(NrpaLevel *nl, int level, const Policy &policy
   nl->levelPolicy = policy; 
 
   mutex m; 
-  int best = -1; 
+  double bestScore; 
+  int best; 
   static NrpaLevel localNrpaLevels[MAX_THREADS];
 
-  for(int j = 0; j < _nbThreads; j++){
+  for(int j = 0; j < _nbThreads - 1; j++){ 
     _subs[j].result = _threadPool.submit([ this, nl, level, j, &m, &best ]() -> int {
-
-	NrpaLevel *localnl = &localNrpaLevels[j];
-	NrpaLevel *sub = &_subs[j];
-	double localBest = localnl->bestRollout.score(); 
-
-	m.lock(); 
-	*localnl = *nl; 
-	m.unlock(); 
-
-	for(int i = 0; i < _nbIter; i+= _nbThreads){
-	  double score = run(sub, level - 1, localnl->levelPolicy);
-	  if(score >= localnl->bestRollout.score()){
-	    localnl->bestRollout = sub->bestRollout; 
-	    localnl->legalMoveCodes = sub->legalMoveCodes;
-	  }
-
-	  m.lock();
-	  if(nl->bestRollout.score() <= localnl->bestRollout.score()){
-	    best = j; 
-	    nl->bestRollout = sub->bestRollout; 
-	    nl->legalMoveCodes = sub->legalMoveCodes;
-	  }
-	  else { // nl is better than local nl, 
-	    localnl->bestRollout = nl->bestRollout; 
-	    localnl->legalMoveCodes = nl->legalMoveCodes;
-	  }
-	  m.unlock();  
-
-	  localnl->updatePolicy(); 
-
-	  if(_stats.timeout()) break;
-
-	}
-	return 1;
+	doTask3(nl, &localNrpaLevels[j], level, j, &m); 
       }); 
   }
 
-  for(int j = 0; j < _nbThreads; j++){
-    _subs[j].result.wait();
+  /* Do last task in this thread */ 
+  bestScore = doTask3(nl, &localNrpaLevels[_nbThreads - 1], level, _nbThreads - 1, &m); 
+  best = _nbThreads - 1; 
+
+  for(int j = 0; j < _nbThreads - 1; j++){
+    double score = _subs[j].result.get(); 
+    if(score > bestScore){
+      best = j;
+      bestScore = score; 
+    }
   }
 
-  if(best != -1)
-    *nl = localNrpaLevels[best];
+  *nl = localNrpaLevels[best];
 
   return nl->bestRollout.score();
 
