@@ -5,7 +5,7 @@
 #ifndef CLI_HPP
 #define CLI_HPP
 #include <string>
-
+#include <iostream>
 #include <unistd.h> //GETOPT
 #include <getopt.h>
 
@@ -20,7 +20,7 @@ struct Options{
   int numLevel = 4;
   int numIter = 10;
   int numThread = 0;
-  int timeout = -1;
+  int timeout = 0;
   int iterStats = 0; 
   int timerStats = 0; 
   std::string tag = ""; // name for this run, will be used to generate trace data file 
@@ -28,12 +28,58 @@ struct Options{
   int parStrat = 1; 
   bool threadStats = false; 
 
-  static Options parse(int &argc, char **&argv); 
+  static void usage(const std::string &binName, std::ostream &os = std::cerr); 
+  static Options parse(int &argc, char **&argv, bool exitOnError = true); 
   void print(std::ostream &os = std::cout, const std::string &prefix = "") const; 
 
 }; 
 
-inline Options Options::parse(int &argc, char **&argv){
+
+static const char *yesnostring(int i){
+  static const char *yes="yes"; 
+  return i!=0?"yes":"no"; 
+}
+
+
+inline void Options::usage(const std::string &binName, std::ostream &os) {
+  Options d; 
+  os<<"Usage: "<<binName<<" [options]\n"
+    << "where option is any of these: \n"
+    << "\t--num-run=NUM, -r NUM\n"
+    << "\t\tNumber of test runs (default: "<<d.numRun<<").\n"
+
+    << "\t--num-level=NUM, -l NUM\n"
+    << "\t\tNrpa depth (default: "<<d.numLevel<<").\n"
+
+    << "\t--num-thread=NUM, -x NUM\n"
+    << "\t\tNumber of threads (0 = hardware capacity, default: "<<d.numThread<<").\n"
+
+    << "\t--timeout=NUM, -t NUM\n"
+    << "\t\tTimeout in sec. for a single run (0 = no timeout, default: "<<d.timeout<<").\n"
+
+    << "\t--iter-stats, -s\n"
+    << "\t\tEnable iteration based statistics (default: "<<yesnostring(d.iterStats)<<").\n"
+
+    << "\t--timer-stats, -S\n"
+    << "\t\tEnable timer based statistics (default: "<<yesnostring(d.iterStats)<<").\n"
+
+    << "\t--tag=STRING, -T STRING\n"
+    << "\t\tSet a tag name for this run, it will be appened to statistics file name (default: None).\n"
+
+    << "\t--parallel-level=NUM, -p NUM\n"
+    << "\t\tGo parallel call at level N (default: "<<d.parallelLevel<<").\n"
+
+    << "\t--parallel-strat=NUM, -P NUM\n"
+    << "\t\tUse parallelization strategy number N (default: "<<d.parStrat<<").\n"
+
+    << "\t--thread-stats, -q\n"
+    << "\t\tEnable thread statistics (default: "<<d.threadStats<<").\n"
+
+    << "\t--help, -h\n"
+    << "\t\tThis help."<<endl;
+}
+
+inline Options Options::parse(int &argc, char **&argv, bool exitOnError){
   using namespace std; 
   Options o; 
   int c;
@@ -53,11 +99,12 @@ inline Options Options::parse(int &argc, char **&argv){
 	  {"parallel-level", required_argument, 0, 'p'}, 
 	  {"parallel-srat", required_argument, 0, 'P'}, 
 	  {"thread-stats", no_argument, 0, 'q'}, 
+	  {"help", no_argument, 0, 'h'}, 
 	  {0, 0, 0, 0}
 	};
 
       int option_index = 0;
-      c = getopt_long (argc, argv, "r:l:n:x:t:sST:p:qP:",
+      c = getopt_long (argc, argv, "r:l:n:x:t:sST:p:qP:h",
 		       long_options, &option_index);
      
       /* Detect the end of the options. */
@@ -108,9 +155,16 @@ inline Options Options::parse(int &argc, char **&argv){
 	case 'q':
 	  o.threadStats = true; 
 	  break;
+	case 'h':
+	  usage(argv[0]);
+	  if(exitOnError) exit(1); 
+	  break;
 	default:
 	  cout<<"Unknown arg."<<endl;
-	  exit(1); 
+	  if(exitOnError){
+	    usage(argv[0]); 
+	    exit(1);
+	  }
 	}
     }
 
