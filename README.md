@@ -1,22 +1,41 @@
+NRPA
+====
+
 This is a parallel implementation of the NRPA algorithm (Nested Rollout Policy Allocation).
 
-build
+Build
 =====
 
     cd src
     make
 
-run a test (same game)
+Run a test (same game)
 ======================
-   ./same
 
-How to use NRPA to solve your game
-==================================
+    cd src
+    ./same
+
+Advanced testing
+================
+
+Run all tests 
+
+    make test
+
+Show the average score curve (requires gnuplot)
+
+    make run420
+    make show420
+
+How to use NRPA to solve a new game
+===================================
 
 1. Define a Board class and a Move class following as in leftmove.cpp
 2. Include "nrpa.hpp"
-3. In the main function, call: 
+3. In the main function, call:
+
     Nrpa<Board, Move, 5, MaxPlayoutLength, MaxLegalMoves>::test(Options::parse(argc, argv));
+    
 where:
 
 - 'Board' is your board class
