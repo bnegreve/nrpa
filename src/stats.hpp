@@ -222,10 +222,20 @@ void Stats<NRPA>::writeStats(const string &prefix, const Options &o) const{
     //fs<<"# nbRun "<<nbRun<<" level "<<level<<" nbIter "<<nbIter<<" timeout "<<timeout<<" nbThreads "<<nbThreads<<endl;
     o.print(fs, "# "); 
     fs<<"#<RunId> <timereventid> <timestamp> <currentbestscore>"<<"\n";
+    int maxNbEvents = 0; 
+    for(int i = 0; i < _runId; i++)
+      maxNbEvents = max(maxNbEvents, _runNbEvents[i]); 
+
     for(int i = 0; i < _runId; i++){
-      for(int j = 0; j < _runNbEvents[i]; j++){
-	const NrpaStats &s = _timerStats[i][j]; 
-	fs<<i<<" "<<j<<" "<<s.date<<" "<<s.bestScore<<" "<<"\n";
+      for(int j = 0; j < maxNbEvents; j++){
+	if(j < _runNbEvents[i]){
+	  const NrpaStats &s = _timerStats[i][j]; 
+	  fs<<i<<" "<<j<<" "<<s.date<<" "<<s.bestScore<<" "<<"\n";
+	}
+	else{
+	  const NrpaStats &s = _timerStats[i][_runNbEvents[i] - 1]; 
+	  fs<<i<<" "<<j<<" "<<s.date<<" "<<s.bestScore<<" "<<"\n";
+	}
       }
       fs<<"\n\n"; 
     }
