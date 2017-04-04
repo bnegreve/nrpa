@@ -81,7 +81,7 @@ double Nrpa<B,M,L,PL,LM>::test(const Options &o){
     _stats.finishRun(); 
   }
   
-  _stats.writeStats("dat/nrpa_stats", o.tag); 
+  _stats.writeStats("dat/nrpa_stats", o); 
 
   cout<<"Avgscore: "<< avgscore / nbRun<<endl; 
   cout<<"Bestscore-overall: "<< maxscore <<endl; 

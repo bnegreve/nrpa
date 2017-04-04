@@ -29,7 +29,7 @@ struct Options{
   bool threadStats = false; 
 
   static Options parse(int &argc, char **&argv); 
-  void print() const; 
+  void print(std::ostream &os = std::cout, const std::string &prefix = "") const; 
 
 }; 
 
@@ -121,14 +121,16 @@ inline Options Options::parse(int &argc, char **&argv){
   return o; 
 }
 
-inline void Options::print() const{
-  cout<<"== Options =="<<endl;
-  cout<<"numRun = "<<numRun<<endl;
-  cout<<"numLevel = "<<numLevel<<endl;
-  cout<<"numIter = "<<numIter<<endl;
-  cout<<"numThread = "<<numThread<<endl;
-  cout<<"timeout = "<<timeout<<endl;
-  cout<<"== End of options =="<<endl;
+inline void Options::print(std::ostream &os, const std::string &prefix) const{
+  os<<prefix<<"== Options ==\n"; 
+  os<<prefix<<"numRun = "<<numRun<<"\n";
+  os<<prefix<<"numLevel = "<<numLevel<<"\n";
+  os<<prefix<<"numIter = "<<numIter<<"\n";
+  os<<prefix<<"numThread = "<<numThread<<"\n";
+  os<<prefix<<"timeout = "<<timeout<<"\n";
+  os<<prefix<<"parallelStrat = "<<parStrat<<"\n";
+  os<<prefix<<"parallelLevel = "<<parallelLevel<<"\n";
+  os<<prefix<<"== End of options =="<<endl; 
 }
 
 

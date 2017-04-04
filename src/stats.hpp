@@ -11,6 +11,8 @@
 #include <sstream>
 #include <iomanip> 
 
+#include "cli.hpp"
+
 template <typename NRPA> 
 class Stats{
 
@@ -43,8 +45,7 @@ public:
   void recordIterStats(int iter, const typename NRPA::NrpaLevel &nl); 
   void recordTimerStats(const typename NRPA::NrpaLevel &nl); 
 
-  void writeStats(const std::string &prefix = "nrpa_stats",
-		  const std::string &tag = "") const; 
+  void writeStats(const std::string &prefix, const Options &o) const; 
 
   float getTime() const; 
 
@@ -178,7 +179,7 @@ void Stats<NRPA>::recordTimerStats(const typename NRPA::NrpaLevel &nl){
 
 
 template <typename NRPA>
-void Stats<NRPA>::writeStats(const string &prefix, const std::string &tag) const{
+void Stats<NRPA>::writeStats(const string &prefix, const Options &o) const{
   if( ! ( _iterStatsOn || _timerStatsOn ) ) return ; 
 
   fstream fs;
@@ -188,19 +189,17 @@ void Stats<NRPA>::writeStats(const string &prefix, const std::string &tag) const
   ostringstream filename;
 
   filename<<prefix;
-  filename<<"_level."<<_nrpa->_startLevel;
-  filename<<"_nbIter."<<_nrpa->_nbIter;
+  filename<<"_level."<<o.numLevel;
+  filename<<"_nbIter."<<o.numIter;
 
   if(_iterStatsOn){
     ostringstream iterfilename; 
     iterfilename<<filename.str()<<".iter.dat"; 
-    if(tag != "")
-      iterfilename<<"."<<tag;
+    if(o.tag != "")
+      iterfilename<<"."<<o.tag;
     
     fs.open(iterfilename.str(), fstream::out);
-    fs<<"#nbRun: "<<_runId<<"\n"; 
-    fs<<"#timeout: "<<_timeout<<"\n"; 
-    fs<<"#num-threads: "<<_nrpa->_nbThreads<<"\n"; 
+    o.print(fs, "# "); 
     fs<<"#<RunId> <iterId> <timestamp> <currentbestscore>"<<"\n";
     //fs<<"# nbRun "<<nbRun<<" level "<<level<<" nbIter "<<nbIter<<" timeout "<<timeout<<" nbThreads "<<nbThreads<<endl;
     for(int i = 0; i < _runId; i++){
@@ -216,14 +215,12 @@ void Stats<NRPA>::writeStats(const string &prefix, const std::string &tag) const
   if(_timerStatsOn){
     ostringstream timerfilename;
     timerfilename<<filename.str()<<".timer.dat"; 
-    if(tag != "")
-      timerfilename<<"."<<tag;
+    if(o.tag != "")
+      timerfilename<<"."<<o.tag;
 
     fs.open(timerfilename.str(), fstream::out);
     //fs<<"# nbRun "<<nbRun<<" level "<<level<<" nbIter "<<nbIter<<" timeout "<<timeout<<" nbThreads "<<nbThreads<<endl;
-    fs<<"#nbRun: "<<_runId<<"\n"; 
-    fs<<"#timeout: "<<_timeout<<"\n"; 
-    fs<<"#num-threads: "<<_nrpa->_nbThreads<<"\n"; 
+    o.print(fs, "# "); 
     fs<<"#<RunId> <timereventid> <timestamp> <currentbestscore>"<<"\n";
     for(int i = 0; i < _runId; i++){
       for(int j = 0; j < _runNbEvents[i]; j++){
