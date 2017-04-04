@@ -27,6 +27,20 @@ Show the average score curve (requires gnuplot)
     make run420
     make show420
 
+Debug
+=====
+
+Changing 
+
+    CXXFLAGS=-O3 -g -DNDEBUG -lpthread -std=c++11
+
+into 
+
+    CXXFLAGS=-O0 -g -lpthread -std=c++11
+
+In src/Makefile will run in debug mode. It is recommanded to run in debug mode before. 
+
+
 How to use NRPA to solve a new game
 ===================================
 
@@ -48,6 +62,7 @@ where:
 
 5. run it.
 
+Many examples are available in src/test/
 
 Usage
 =====
@@ -80,8 +95,8 @@ Usage
 Authors
 =======
 
-Benjamin Negrevergne
-Tristan Cazenave
+- Benjamin Negrevergne
+- Tristan Cazenave
 
 License
 =======
