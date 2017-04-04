@@ -60,6 +60,11 @@ double Nrpa<B,M,L,PL,LM>::test(const Options &o){
   int parLevel = o.parallelLevel; 
 
   _parStrat = o.parStrat; 
+  if(o.seed >= 0)
+    if(o.seed == 0)
+      srand(clock() * getpid());
+    else
+      srand(o.seed); 
 
   errorif(level >= L, "level should be lower than L template argument."); 
   

@@ -27,6 +27,7 @@ struct Options{
   int parallelLevel = 1; 
   int parStrat = 1; 
   bool threadStats = false; 
+  int seed = -1; 
 
   static void usage(const std::string &binName, std::ostream &os = std::cerr); 
   static Options parse(int &argc, char **&argv, bool exitOnError = true); 
@@ -75,6 +76,10 @@ inline void Options::usage(const std::string &binName, std::ostream &os) {
     << "\t--thread-stats, -q\n"
     << "\t\tEnable thread statistics (default: "<<d.threadStats<<").\n"
 
+    << "\t--seed=NUM, -a\n"
+    << "\t\tUse NUM to seed the random generator"
+    << "(-1 = no seeding, 0 use clock()*getpid(), otheruse use NUM, default: "<<d.seed<<").\n"
+
     << "\t--help, -h\n"
     << "\t\tThis help."<<endl;
 }
@@ -97,14 +102,15 @@ inline Options Options::parse(int &argc, char **&argv, bool exitOnError){
 	  {"time-stats",    no_argument,       0, 'S'},
 	  {"tag",    required_argument,       0, 'T'},
 	  {"parallel-level", required_argument, 0, 'p'}, 
-	  {"parallel-srat", required_argument, 0, 'P'}, 
+	  {"parallel-strat", required_argument, 0, 'P'}, 
 	  {"thread-stats", no_argument, 0, 'q'}, 
+	  {"seed", required_argument, 0, 'a'}, 
 	  {"help", no_argument, 0, 'h'}, 
 	  {0, 0, 0, 0}
 	};
 
       int option_index = 0;
-      c = getopt_long (argc, argv, "r:l:n:x:t:sST:p:qP:h",
+      c = getopt_long (argc, argv, "r:l:n:x:t:sST:p:qP:a:h",
 		       long_options, &option_index);
      
       /* Detect the end of the options. */
@@ -154,6 +160,9 @@ inline Options Options::parse(int &argc, char **&argv, bool exitOnError){
 	  break;
 	case 'q':
 	  o.threadStats = true; 
+	  break;
+	case 'a':
+	  o.seed = atoi(optarg); 
 	  break;
 	case 'h':
 	  usage(argv[0]);
