@@ -28,10 +28,11 @@ struct Options{
   int parStrat = 1; 
   bool threadStats = false; 
   int seed = -1; 
-
+  
   static void usage(const std::string &binName, std::ostream &os = std::cerr); 
   static Options parse(int &argc, char **&argv, bool exitOnError = true); 
   void print(std::ostream &os = std::cout, const std::string &prefix = "") const; 
+  void printAll(std::ostream &os = std::cout, const std::string &prefix = "") const; 
 
 }; 
 
@@ -81,13 +82,18 @@ inline void Options::usage(const std::string &binName, std::ostream &os) {
     << "(-1 = no seeding, 0 use clock()*getpid(), otheruse use NUM, default: "<<d.seed<<").\n"
 
     << "\t--help, -h\n"
-    << "\t\tThis help."<<endl;
+    << "\t\tThis help."
+
+    << "\t--parse-option-only, -o\n"
+    << "\t\tParse options and exit."<<endl;
+
 }
 
 inline Options Options::parse(int &argc, char **&argv, bool exitOnError){
   using namespace std; 
   Options o; 
   int c;
+  bool parseOnly = false; 
      
   while (1)
     {
@@ -106,11 +112,12 @@ inline Options Options::parse(int &argc, char **&argv, bool exitOnError){
 	  {"thread-stats", no_argument, 0, 'q'}, 
 	  {"seed", required_argument, 0, 'a'}, 
 	  {"help", no_argument, 0, 'h'}, 
+	  {"parse-options-only", no_argument, 0, 'o'}, 
 	  {0, 0, 0, 0}
 	};
 
       int option_index = 0;
-      c = getopt_long (argc, argv, "r:l:n:x:t:sST:p:qP:a:h",
+      c = getopt_long (argc, argv, "r:l:n:x:t:sST:p:qP:a:ho",
 		       long_options, &option_index);
      
       /* Detect the end of the options. */
@@ -168,6 +175,9 @@ inline Options Options::parse(int &argc, char **&argv, bool exitOnError){
 	  usage(argv[0]);
 	  if(exitOnError) exit(1); 
 	  break;
+	case 'o':
+	  parseOnly=true; 
+	  break; 
 	default:
 	  cout<<"Unknown arg."<<endl;
 	  if(exitOnError){
@@ -180,8 +190,32 @@ inline Options Options::parse(int &argc, char **&argv, bool exitOnError){
   argc -= optind;
   argv += optind; 
   
-  o.print();
-  return o; 
+  if(parseOnly){
+    o.printAll(); 
+    if(exitOnError) exit(1);
+    else exit(0); 
+  }
+  else{
+    o.print();
+    return o;
+  }
+}
+
+inline void Options::printAll(std::ostream &os, const std::string &prefix) const{
+  os<<prefix<<"== Options ==\n"; 
+  os<<prefix<<"numRun = "<<numRun<<"\n";
+  os<<prefix<<"numLevel = "<<numLevel<<"\n";
+  os<<prefix<<"numIter = "<<numIter<<"\n";
+  os<<prefix<<"numThread = "<<numThread<<"\n";
+  os<<prefix<<"timeout = "<<timeout<<"\n";
+  os<<prefix<<"iterStats = "<<iterStats<<"\n"; 
+  os<<prefix<<"timerStats = "<<iterStats<<"\n";
+  os<<prefix<<"tag = \""<<tag<<"\"\n"; 
+  os<<prefix<<"parallelLevel = "<<parallelLevel<<"\n"; 
+  os<<prefix<<"parallelStrat = "<<parStrat<<"\n";
+  os<<prefix<<"threadStats = "<<threadStats<<"\n"; 
+  os<<prefix<<"seed = "<<seed<<"\n"; 
+  os<<prefix<<"== End of options =="<<endl; 
 }
 
 inline void Options::print(std::ostream &os, const std::string &prefix) const{
