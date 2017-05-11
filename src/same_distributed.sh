@@ -33,7 +33,7 @@ cat << EOS
    
     <standard_nrpa_arguments> can be any argument supported by
     nrpa. Arguments are passed to nrpa untouched with the exception of
-    --num-run (or -r) and --seed (or -a) which are captured by this
+    --num-run (or -r) and --seed (or -a) and --statfilePrefix (or -f)  which are captured by this
     script to ensure that this script behaves like the normal nrpa algorithm.  
 EOS
 }
@@ -77,14 +77,17 @@ echo "NUM RUNS $NUM_RUN"
 COUNT=0;
 TOTAL=0; 
 
+echo "#<RunId> <timereventid> <timestamp> <currentbestscore>" > /tmp/nrpa_stats
+
 for i in $(seq 1 $NUM_RUN); do 
 
     seq 1 $NUM_NRPA | parallel  --no-notice --sshloginfile $NODE_FILE \
 				 $NRPA_HOME/remote_run.sh $NRPA_HOME \
-				 same $* -r 1 --seed=0 ::: > /tmp/nrpa_output
+				 same $* -S -r 1 --seed=0 --statfile-prefix="dat/nrpa_stats_"{}"_"$i ::: > /tmp/nrpa_output
 
     echo "All scores:"
     cat /tmp/nrpa_output | grep Bestscore: | cut -d ' ' -f 2
+    cat /tmp/nrpa_output | grep timer_stats
 
     LOCALBEST=$(cat /tmp/nrpa_output | grep Bestscore: | cut -d ' ' -f 2 | sort -n | tail -n 1)
     echo "Best score in this run: $LOCALBEST"
@@ -95,7 +98,13 @@ for i in $(seq 1 $NUM_RUN); do
     if [ "$LOCALBEST" -gt "$BEST" ]; then
 	BEST=$LOCALBEST;
     fi
+
+# generate stats (OMG!)
+    cat /tmp/nrpa_output | awk 'BEGIN{ for(i = 0 ; i < 20; i++){timestamp[i] = -1; best[i] = -99999}}/timer_stats:  [^#]/{ if ($5 > best[$3]) { timestamp[$3] = $4; best[$3] = $5 } }END{ for (i in timestamp){ if(timestamp[i] != -1) print '$i', i, timestamp[i], best[i]} print "\n\n"}' >> /tmp/nrpa_stats
+
 done
+
+cat /tmp/nrpa_stats
 
 AVGBEST=$(echo "scale=2; $TOTAL / $COUNT" | bc)
 echo "Gobal bestscore: $BEST"
