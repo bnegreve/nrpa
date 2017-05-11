@@ -1,3 +1,4 @@
+#!/bin/bash
 # same_distributed.sh
 # Made by Benjamin Negrevergne 
 # Started on <2017-05-08 Mon>
@@ -12,11 +13,11 @@
 #
 # Usage: see ./same_distributed (without any argument).
 #
-#!/bin/bash
 
-function usage {
+
+usage () {
 cat << EOS
-./same_distributed <node_list_file> <standard_nrpa_arguments>
+./same_distributed <node_list_file> <num_nrpa> <standard_nrpa_arguments>
  Where: 
     <node_list_file> is the list of nodes accessible by ssh using gnu
     parallel syntax (see man parallel)
@@ -27,7 +28,9 @@ cat << EOS
     will create two jobs on host1 and two on node2.
     Each host must be fully accessible using ssh, it is recommanded to
     manually login on each node before running this script.
-    
+ 
+    <num_nrpa> is the number of nrpa instance to run, should be lower than the total number of cores available in node_list_file 
+   
     <standard_nrpa_arguments> can be any argument supported by
     nrpa. Arguments are passed to nrpa untouched with the exception of
     --num-run (or -r) and --seed (or -a) which are captured by this
@@ -35,7 +38,7 @@ cat << EOS
 EOS
 }
 
-if [ $# -lt 1 ]; then
+if [ $# -lt 2 ]; then
     usage;
     exit 1;
 fi
@@ -52,24 +55,33 @@ echo "Assuming nrpa home at $NRPA_HOME"
 NODE_FILE=$1
 shift
 
+NUM_NRPA=$1
+shift
 
 echo "ARGS $*"
 # parse option and exit
-./same -o $* > /tmp/nrpa_distributed_options
+$NRPA_HOME/same -o $* > /tmp/nrpa_distributed_options
 NUM_RUN=$(cat /tmp/nrpa_distributed_options | grep 'numRun = ' | cut -d '=' -f 2)
 
 echo "Number of runs $NUM_RUN"
 
 
-NUM_NODES=$(cat $NODE_FILE | grep -c -v -e '^#.*$' -e '^$')
-echo "Running nrpa on $NUM_NODES nodes."
+#NUM_NRPA=$(cat $NODE_FILE | grep -c -v -e '^#.*$' -e '^$')
+echo "Running $NUM_NRPA parallel NRPAs."
 
 BEST=-9999999 # todo: berk
-for i in {1..$NUM_RUN}; do 
 
-    seq 1 $NUM_NODES | parallel  --no-notice --sshloginfile $NODE_FILE \
+echo "NUM RUNS $NUM_RUN"
+
+
+COUNT=0;
+TOTAL=0; 
+
+for i in $(seq 1 $NUM_RUN); do 
+
+    seq 1 $NUM_NRPA | parallel  --no-notice --sshloginfile $NODE_FILE \
 				 $NRPA_HOME/remote_run.sh $NRPA_HOME \
-				 same $* -r 1 --seed={} ::: > /tmp/nrpa_output
+				 same $* -r 1 --seed=0 ::: > /tmp/nrpa_output
 
     echo "All scores:"
     cat /tmp/nrpa_output | grep Bestscore: | cut -d ' ' -f 2
@@ -77,10 +89,16 @@ for i in {1..$NUM_RUN}; do
     LOCALBEST=$(cat /tmp/nrpa_output | grep Bestscore: | cut -d ' ' -f 2 | sort -n | tail -n 1)
     echo "Best score in this run: $LOCALBEST"
 
-    if [ $LOCALBEST -gt $BEST ]; then
+    ((COUNT++))
+    TOTAL=$(echo $TOTAL+$LOCALBEST | bc )
+
+    if [ "$LOCALBEST" -gt "$BEST" ]; then
 	BEST=$LOCALBEST;
     fi
 done
 
-echo "Bestscore: $BEST"
+AVGBEST=$(echo "scale=2; $TOTAL / $COUNT" | bc)
+echo "Gobal bestscore: $BEST"
+echo "Average bestscore: $AVGBEST"
+
 
