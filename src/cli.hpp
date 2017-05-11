@@ -22,7 +22,8 @@ struct Options{
   int numThread = 0;
   int timeout = 0;
   int iterStats = 0; 
-  int timerStats = 0; 
+  int timerStats = 0;
+  std::string statfilePrefix = "dat/nrpa_stats"; 
   std::string tag = ""; // name for this run, will be used to generate trace data file 
   int parallelLevel = 1; 
   int parStrat = 1; 
@@ -65,6 +66,9 @@ inline void Options::usage(const std::string &binName, std::ostream &os) {
     << "\t--timer-stats, -S\n"
     << "\t\tEnable timer based statistics (default: "<<yesnostring(d.iterStats)<<").\n"
 
+    << "\t--statfilePrefix=STRING, -f STRING\n"
+    << "\t\tPrefix for the stat files (default: "<<d.statfilePrefix<<").\n"
+
     << "\t--tag=STRING, -T STRING\n"
     << "\t\tSet a tag name for this run, it will be appened to statistics file name (default: None).\n"
 
@@ -106,6 +110,7 @@ inline Options Options::parse(int &argc, char **&argv, bool exitOnError){
 	  {"timeout",    required_argument,       0, 't'},
 	  {"iter-stats",    no_argument,       0, 's'},
 	  {"time-stats",    no_argument,       0, 'S'},
+	  {"statfile-prefix",    required_argument,       0, 'f'},
 	  {"tag",    required_argument,       0, 'T'},
 	  {"parallel-level", required_argument, 0, 'p'}, 
 	  {"parallel-strat", required_argument, 0, 'P'}, 
@@ -117,7 +122,7 @@ inline Options Options::parse(int &argc, char **&argv, bool exitOnError){
 	};
 
       int option_index = 0;
-      c = getopt_long (argc, argv, "r:l:n:x:t:sST:p:qP:a:ho",
+      c = getopt_long (argc, argv, "r:l:n:x:t:sSf:T:p:qP:a:ho",
 		       long_options, &option_index);
      
       /* Detect the end of the options. */
@@ -156,6 +161,9 @@ inline Options Options::parse(int &argc, char **&argv, bool exitOnError){
 	case 'S':
 	  o.timerStats = 1;
 	  break;
+	case 'f':
+	  o.statfilePrefix = optarg;
+	  break; 
 	case 'T':
 	  o.tag = optarg;
 	  break; 
@@ -210,6 +218,7 @@ inline void Options::printAll(std::ostream &os, const std::string &prefix) const
   os<<prefix<<"timeout = "<<timeout<<"\n";
   os<<prefix<<"iterStats = "<<iterStats<<"\n"; 
   os<<prefix<<"timerStats = "<<iterStats<<"\n";
+  os<<prefix<<"statfilePrefix = \""<<statfilePrefix<<"\"\n"; 
   os<<prefix<<"tag = \""<<tag<<"\"\n"; 
   os<<prefix<<"parallelLevel = "<<parallelLevel<<"\n"; 
   os<<prefix<<"parallelStrat = "<<parStrat<<"\n";
