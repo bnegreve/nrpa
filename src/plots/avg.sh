@@ -5,11 +5,11 @@ awk 'BEGIN  { xmax = 0; }                                                       
               if($3 > xmax) { xmax=$3; };                                               \
      }                                                                                  \
      END    {                                                                    	\
-              for(i =0; i < length(count); i++){					\
+              for( i in count){					                        \
           	print i,								\
           	    xsum[i] / count[i],							\
           	    sum[i] / count[i],							\
           	    sqrt( (1/count[i]) * (sqsum[i] - (sum[i]*sum[i]/count[i]))),        \
           	    xmax;                                                               \
        	     }                                                                          \
-     }' $1
+     }' $*
