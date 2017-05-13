@@ -759,8 +759,11 @@ void printHighScore (int i) {
 //#include "beamuctnrpa.c"
 
 int main(int argc, char *argv []) {
-  if (argc > 1) 
+  Options options = Options::parse(argc, argv); 
+  if (argc > 1)
     pb = atoi (argv [1]);
+  cout<<"Executing nrpa to solve pb number "<<pb<<endl;
+
   if (argc > 2)  {
     k = atof (argv [2]);
     fprintf (stderr, "k = %f\n", k);
@@ -837,7 +840,7 @@ int main(int argc, char *argv []) {
   saveHighScore = true;
 
   
-  Nrpa<Board, Move, 5, MaxPlayoutLength, MaxLegalMoves>::test(Options::parse(argc, argv));
+  Nrpa<Board, Move, 5, MaxPlayoutLength, MaxLegalMoves>::test(options);
 
   //  nrpa.test(2, 4, 5, 1); 
 
