@@ -86,7 +86,7 @@ inline void Options::usage(const std::string &binName, std::ostream &os) {
     << "(-1 = no seeding, 0 use clock()*getpid(), otheruse use NUM, default: "<<d.seed<<").\n"
 
     << "\t--help, -h\n"
-    << "\t\tThis help."
+    << "\t\tThis help.\n"
 
     << "\t--parse-option-only, -o\n"
     << "\t\tParse options and exit."<<endl;
