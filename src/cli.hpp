@@ -195,8 +195,10 @@ inline Options Options::parse(int &argc, char **&argv, bool exitOnError){
 	}
     }
 
+  /* shift all remaining arguments in argv. */
+  for(int i = 1; i < argc; i++) 
+    argv[i] = argv[optind]; 
   argc -= optind;
-  argv += optind; 
   
   if(parseOnly){
     o.printAll(); 
