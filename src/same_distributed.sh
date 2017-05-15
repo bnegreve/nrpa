@@ -77,19 +77,22 @@ echo "NUM RUNS $NUM_RUN"
 COUNT=0;
 TOTAL=0; 
 
-echo "#<RunId> <timereventid> <timestamp> <currentbestscore>" > /tmp/nrpa_stats
+NRPA_OUTPUT=$(mktemp)
+NRPA_STATS=$(mktemp)
+
+echo "#<RunId> <timereventid> <timestamp> <currentbestscore>" > $NRPA_STATS
 
 for i in $(seq 1 $NUM_RUN); do 
 
     seq 1 $NUM_NRPA | parallel  --no-notice --sshloginfile $NODE_FILE \
 				 $NRPA_HOME/remote_run.sh $NRPA_HOME \
-				 same $* -S -r 1 --seed=0 --statfile-prefix="dat/nrpa_stats_"{}"_"$i ::: > /tmp/nrpa_output
+				 same $* -S -r 1 --seed=0 --statfile-prefix="$NRPA_OUTPUT_nrpa_stats_"{}"_"$i ::: > $NRPA_OUTPUT
 
     echo "All scores:"
-    cat /tmp/nrpa_output | grep Bestscore: | cut -d ' ' -f 2
-    cat /tmp/nrpa_output | grep timer_stats
+    cat $NRPA_OUTPUT | grep Bestscore: | cut -d ' ' -f 2
+    cat $NRPA_OUTPUT | grep timer_stats
 
-    LOCALBEST=$(cat /tmp/nrpa_output | grep Bestscore: | cut -d ' ' -f 2 | sort -n | tail -n 1)
+    LOCALBEST=$(cat $NRPA_OUTPUT | grep Bestscore: | cut -d ' ' -f 2 | sort -n | tail -n 1)
     echo "Best score in this run: $LOCALBEST"
 
     ((COUNT++))
@@ -100,11 +103,15 @@ for i in $(seq 1 $NUM_RUN); do
     fi
 
 # generate stats (OMG!)
-    cat /tmp/nrpa_output | awk 'BEGIN{ for(i = 0 ; i < 20; i++){timestamp[i] = -1; best[i] = -99999}}/timer_stats:  [^#]/{ if ($5 > best[$3]) { timestamp[$3] = $4; best[$3] = $5 } }END{ for (i in timestamp){ if(timestamp[i] != -1) print '$i', i, timestamp[i], best[i]} print "\n\n"}' >> /tmp/nrpa_stats
+    cat $NRPA_OUTPUT | awk 'BEGIN{ for(i = 0 ; i < 20; i++){timestamp[i] = -1; best[i] = -99999}}/timer_stats:  [^#]/{ if ($5 > best[$3]) { timestamp[$3] = $4; best[$3] = $5 } }END{ for (i in timestamp){ if(timestamp[i] != -1) print '$i', i, timestamp[i], best[i]} print "\n\n"}' >> $NRPA_STATS
 
 done
 
-cat /tmp/nrpa_stats
+cat $NRPA_OUTPUT
+
+#rm $NRPA_OUTPUT
+#rm $NRPA_STATS
+#rm $NRPA_OUTPUT_nrpa_stats_*
 
 AVGBEST=$(echo "scale=2; $TOTAL / $COUNT" | bc)
 echo "Gobal bestscore: $BEST"
