@@ -170,9 +170,6 @@ void Stats<NRPA>::recordTimerStats(const typename NRPA::NrpaLevel &nl){
     _timerStats[_runId][eventIdx].bestScore = nl.bestRollout.score(); 
     _timerStats[_runId][eventIdx].eventIdx = eventIdx;
 
-    // cout<<"RECORD Timer event "<<_runNbEvents[_runId]<<" at <"
-    // 	<<_timerStats[_runId][eventIdx].date<<">"<<"\n";
-
     _runNbEvents[_runId]++;
   }
 }
@@ -208,6 +205,7 @@ void Stats<NRPA>::writeStats(const string &prefix, const Options &o) const{
 	fs<<i<<" "<<j<<" "<<s.date<<" "<<s.bestScore<<" "<<"\n";
       }
       fs<<"\n\n"; 
+      cout<<"Iter stats filename: "<<iterfilename.str()<<endl;
     }
     fs.close(); 
   }
@@ -240,6 +238,7 @@ void Stats<NRPA>::writeStats(const string &prefix, const Options &o) const{
       fs<<"\n\n"; 
     }
     fs.close();
+    cout<<"Timer stats filename: "<<timerfilename.str()<<endl;
   }
 }
 
