@@ -93,11 +93,13 @@ private:
 
   double run(NrpaLevel *nl, int level, const Policy &policy);
   double runseq(NrpaLevel *nl, int level, const Policy &policy);     
-  double runparSharedPolicy(NrpaLevel *nl, int level, const Policy &policy); // alias for runpar
-  double runparThreadLocalPolicy(NrpaLevel *nl, int level, const Policy &policy); // alias for runpar3
+  double runparSharedPolicy(NrpaLevel *nl, int level, const Policy &policy); // paper
+  double runparThreadLocalPolicy0(NrpaLevel *nl, int level, const Policy &policy); 
+  double runparThreadLocalPolicy1(NrpaLevel *nl, int level, const Policy &policy); //paper
 
-  /* helper function for threadLocalPolicy */
-  int doTask3(NrpaLevel *nl, NrpaLevel *localnl, int level, int tid, mutex *m); 
+  /* helper functions for threadLocalPolicies */
+  int doTask0(NrpaLevel *nl, NrpaLevel *localnl, int level, int tid, mutex *m); 
+  int doTask1(NrpaLevel *nl, NrpaLevel *localnl, int level, int tid, mutex *m); 
 
 
   static void errorif(bool cond, const std::string &msg = "unknown."); 
