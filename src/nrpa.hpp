@@ -93,12 +93,10 @@ private:
 
   double run(NrpaLevel *nl, int level, const Policy &policy);
   double runseq(NrpaLevel *nl, int level, const Policy &policy);     
-  double runpar(NrpaLevel *nl, int level, const Policy &policy);     
-  double runpar2(NrpaLevel *nl, int level, const Policy &policy);     
-  double runpar3(NrpaLevel *nl, int level, const Policy &policy);     
+  double runparSharedPolicy(NrpaLevel *nl, int level, const Policy &policy); // alias for runpar
+  double runparThreadLocalPolicy(NrpaLevel *nl, int level, const Policy &policy); // alias for runpar3
 
-  int doTask2(NrpaLevel *nl, int level, int tid, double localBest, mutex *mutex); 
-  int doTask3(NrpaLevel *nl, int level, int tid, double localBest, mutex *mutex); 
+  /* helper function for threadLocalPolicy */
   int doTask3(NrpaLevel *nl, NrpaLevel *localnl, int level, int tid, mutex *m); 
 
 

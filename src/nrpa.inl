@@ -118,13 +118,13 @@ double Nrpa<B,M,L,PL,LM>::run(NrpaLevel *nl, int level, const Policy &policy){
     /* Parallel call */ 
     switch(_parStrat){
     case 1:
-      score = runpar(nl, level, policy);
+      score = runparSharedPolicy(nl, level, policy);
       break;
     case 2:
-      score = runpar2(nl, level, policy);
+      errorif(true, "This strategy has been removed"); 
       break;
     case 3: 
-      score = runpar3(nl, level, policy); 
+      score = runparThreadLocalPolicy(nl, level, policy); 
       break;
     default:
       errorif(true, "Unknown parallelization strategy"); 
@@ -190,9 +190,8 @@ double Nrpa<B,M,L,PL,LM>::runseq(NrpaLevel *nl, int level, const Policy &policy)
 
 }
 
-
 template <typename B,typename  M, int L, int PL, int LM>
-double Nrpa<B,M,L,PL,LM>::runpar(NrpaLevel *nl, int level, const Policy &policy){
+double Nrpa<B,M,L,PL,LM>::runparSharedPolicy(NrpaLevel *nl, int level, const Policy &policy){
   using namespace std; 
   assert(level < L); 
   assert(level != 0); // level 0 should be a call to rollout
@@ -245,59 +244,6 @@ double Nrpa<B,M,L,PL,LM>::runpar(NrpaLevel *nl, int level, const Policy &policy)
 
 
 template <typename B,typename  M, int L, int PL, int LM>
-int Nrpa<B,M,L,PL,LM>::doTask2(NrpaLevel *nl, int level, int tid, double localBest, mutex *m){
-  NrpaLevel *sub = &_subs[tid];
-  for(int i = 0; i < _nbIter; i+= _nbThreads){
-    double score = run(sub, level - 1, nl->levelPolicy);
-    if(score >= localBest){ 
-      m->lock(); 
-      if(score >= nl->bestRollout.score()){
-	localBest = score;
-	nl->bestRollout = sub->bestRollout; // TODO only copy at the end of the loop
-	nl->legalMoveCodes = sub->legalMoveCodes;
-      }
-      nl->updatePolicy();  // TODO: OUTCHH!! don't update inside the mutex
-      m->unlock();  
-    }
-
-    if(_stats.timeout()) break;
-
-  }
-  return 1;  
-}
-
-
-template <typename B,typename  M, int L, int PL, int LM>
-double Nrpa<B,M,L,PL,LM>::runpar2(NrpaLevel *nl, int level, const Policy &policy){
-  using namespace std; 
-  assert(level < L); 
-  assert(level != 0); // level 0 should be a call to rollout
-
-  nl->bestRollout.reset(); 
-  nl->levelPolicy = policy; 
-
-  double best = nl->bestRollout.score(); 
-  mutex m; 
-  for(int j = 0; j < _nbThreads; j++){
-    if(j != _nbThreads - 1){
-      _subs[j].result = _threadPool.submit([ this, nl, level, j, best, &m ]() -> int {
-	  return doTask2(nl, level, j, best, &m); 
-	});
-    }
-    else{
-      doTask2(nl, level, j, best, &m);
-    }
-  }
-
-  for(int j = 0; j < _nbThreads; j++){
-    if(j != _nbThreads - 1) _subs[j].result.wait();
-  }
-
-  return nl->bestRollout.score();
-
-}
-
-template <typename B,typename  M, int L, int PL, int LM>
 int Nrpa<B,M,L,PL,LM>::doTask3(NrpaLevel *nl, NrpaLevel *localnl, int level, int tid, mutex *m){
   // nl is the parent nrpa level
   // localnl is the threadlocal copy of the parent nrpa level // may be removed ? 
@@ -337,7 +283,7 @@ int Nrpa<B,M,L,PL,LM>::doTask3(NrpaLevel *nl, NrpaLevel *localnl, int level, int
 
 
 template <typename B,typename  M, int L, int PL, int LM>
-double Nrpa<B,M,L,PL,LM>::runpar3(NrpaLevel *nl, int level, const Policy &policy){
+double Nrpa<B,M,L,PL,LM>::runparThreadLocalPolicy(NrpaLevel *nl, int level, const Policy &policy){
   using namespace std; 
   assert(level < L); 
   assert(level != 0); // level 0 should be a call to rollout
