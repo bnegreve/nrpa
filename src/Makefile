@@ -17,10 +17,10 @@ OTHER_OBJS= $(patsubst %.cpp, %.o, $(OTHER_SRCS))
 	$(CXX) $(CXXFLAGS) -o $@ -c $< 
 
 leftMove: leftMove.o $(NRPA_OBJS)
-	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $< $(NRPA_OBJS)  
+	$(CXX) $(CXXFLAGS) -o $@ $< $(NRPA_OBJS) $(LDFLAGS)
 
 same: same.o $(NRPA_OBJS)
-	$(CXX) $(CXXFLAGS) -o $@ $< $(NRPA_OBJS)
+	$(CXX) $(CXXFLAGS) -o $@ $< $(NRPA_OBJS) $(LDFLAGS)
 
 clean:
 	rm -rf *.o same leftMove *~
