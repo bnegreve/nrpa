@@ -1,6 +1,7 @@
 all: leftMove same
 
 CXXFLAGS=-O3 -g -DNDEBUG -lpthread -std=c++11
+LDFLAGS=-lpthread
 #CXXFLAGS=-O0 --no-inline  -g -lpthread -std=c++11
 
 NRPA_SRCS= nrpa.cpp
@@ -16,7 +17,7 @@ OTHER_OBJS= $(patsubst %.cpp, %.o, $(OTHER_SRCS))
 	$(CXX) $(CXXFLAGS) -o $@ -c $< 
 
 leftMove: leftMove.o $(NRPA_OBJS)
-	$(CXX) $(CXXFLAGS) -o $@ $< $(NRPA_OBJS)  
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $< $(NRPA_OBJS)  
 
 same: same.o $(NRPA_OBJS)
 	$(CXX) $(CXXFLAGS) -o $@ $< $(NRPA_OBJS)
