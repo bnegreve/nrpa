@@ -42,7 +42,7 @@ public:
   inline int level() const { return _level; }
   inline int move(int step) const { assert(step < length()); return _moves[step]; }
 
-  inline int setScore(int score) { _score = score; }
+  inline void setScore(int score) { _score = score; }
 
   inline void addMove(int code){ _moves[_length++] = code; }
 
