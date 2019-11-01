@@ -1,0 +1,14 @@
+./same -x 1 -l 3 -n 10
+== Options ==
+numRun = 4
+numLevel = 3
+numIter = 10
+numThread = 1
+timeout = -1
+== End of options ==
+Bestscore: 1111
+Bestscore: 1145
+Bestscore: 900
+Bestscore: 1090
+Avgscore: 1061.5
+Bestscore-overall: 1145

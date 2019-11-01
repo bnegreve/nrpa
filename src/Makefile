@@ -1,6 +1,6 @@
 all: leftMove same
 
-CXXFLAGS=-O3 -g -DNDEBUG -lpthread -std=c++11
+CXXFLAGS=-O3 -g -lpthread -std=c++11
 LDFLAGS=-lpthread
 #CXXFLAGS=-O0 --no-inline  -g -lpthread -std=c++11
 
