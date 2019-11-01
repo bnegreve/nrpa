@@ -85,5 +85,6 @@ istream &operator>>(istream &is, Rollout<PL> &r){
     cerr<<"Warning, cannot read Rollout from file"<<endl;
     r = Rollout<PL>(); 
   }
+  return is;
 }
 

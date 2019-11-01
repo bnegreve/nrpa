@@ -511,9 +511,15 @@ class Board {
 
   bool terminal () {
     for (int i = 0; i < MaxSize * MaxSize; i++) 
+    {
       if (color [i] != 9)
-	if (possibleMove (i)) 
-	  return false;
+      {
+      	if (possibleMove (i)) 
+        {
+      	  return false;
+        }
+      }
+    }
     return true;
   }
 

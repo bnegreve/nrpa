@@ -1,0 +1,30 @@
+# == Options ==
+# numRun = 4
+# numLevel = 4
+# numIter = 10
+# numThread = 1
+# timeout = 30
+# parallelStrat = 1
+# parallelLevel = 1
+# == End of options ==
+#<RunId> <timereventid> <timestamp> <currentbestscore>
+0 0 1.00 1111.00 
+0 1 2.00 1299.00 
+0 2 3.41 1408.00 
+
+
+1 0 1.00 1013.00 
+1 1 2.00 1076.00 
+1 2 3.44 1306.00 
+
+
+2 0 1.00 899.00 
+2 1 2.00 1360.00 
+2 2 3.47 1360.00 
+
+
+3 0 1.00 1127.00 
+3 1 2.00 1398.00 
+3 2 3.46 1499.00 
+
+

@@ -100,7 +100,7 @@ double Nrpa<B,M,L,PL,LM>::test(int nbRun, int level, int nbIter, int timeout, in
   o.numIter = nbIter;
   o.timeout = timeout;
   o.numThread = nbThreads;
-  test(o); 
+  return test(o); 
 }
 
 template <typename B,typename  M, int L, int PL, int LM>
